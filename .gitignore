@@ -1,3 +1,10 @@
+<<<<<<< HEAD
+*.svn
+bin/
+obj/
+Samples/bin
+Samples/obj
+=======
 # ReSharper meta directory
 _ReSharper*
 
@@ -8,6 +15,6 @@ obj
 # mstest test results
 TestResults
 
-# pidb files and userprefs
+# pidb files
 *.pidb
-*.userprefs
+>>>>>>> 4638c9466a3fd4bbf21c4e5eca4273253c90bedc
