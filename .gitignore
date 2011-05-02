@@ -8,5 +8,6 @@ obj
 # mstest test results
 TestResults
 
-# pidb files
+# pidb files and userprefs
 *.pidb
+*.userprefs
