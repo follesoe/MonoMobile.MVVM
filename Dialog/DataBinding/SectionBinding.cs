@@ -1,5 +1,5 @@
 // 
-//  ViewAttribute.cs
+//  {filename}.cs
 // 
 //  Author:
 //    Robert Kozak (rkozak@gmail.com / Twitter:@robertkozak)
@@ -31,15 +31,12 @@ namespace MonoMobile.MVVM
 {
 	using System;
 
-	[AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = false)]
-	public class ViewAttribute: Attribute
+	public partial class Section
 	{
-		public ViewAttribute(Type viewType)
+		public override void BindProperties()
 		{
-			ViewType = viewType;
+			CaptionProperty.BindTo(this, () => HeaderText );
 		}
-
-		public Type ViewType { get; set; }
 	}
 }
 

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 namespace Samples
 {
 	using System;
@@ -9,37 +10,27 @@ namespace Samples
 
 	[Theme(typeof(HoneyDoTheme))]
 	[Theme(typeof(FrostedTheme))]
-	public class HoneyDoList
+	public class HoneyDoListView: View
 	{
-		[Checkbox]
-		[DefaultValue(true)]
-		public bool SubmitApp
+		[Bind("Caption", "Caption")]
+		[Root(ViewType = typeof(StandardListView))]
+		public MultiselectCollection<string> Items { get; private set; }
+
+		
+		public HoneyDoListView()
 		{
-			get;
-			set;
+			var viewModel = new HoneyDoListViewModel();
+			DataContext = viewModel;
+
+			Items = viewModel.Items;
+			viewModel.Caption = "Things to do";
 		}
-		[Checkbox]
-		public bool OrderNewSupplies
+
+		[Section]
+		[Button]
+		public void ChangeCaption()
 		{
-			get;
-			set;
-		}
-		[Checkbox]
-		public bool BuyTickets
-		{
-			get;
-			set;
-		}
-		[Checkbox]
-		[DefaultValue(true)]
-		public bool PickUpBooks
-		{
-			get;
-			set;
-		}
-		public HoneyDoList()
-		{
-			
+			((HoneyDoListViewModel)DataContext).Caption = "TODO";
 		}
 	}
 

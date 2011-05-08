@@ -57,6 +57,7 @@ namespace MonoMobile.MVVM
 		private Source _TableSource;
 
 		public UIImage BackgroundImage { get; set; }
+		public UIColor BackgroundColor { get; set; }
 
 		public UITableViewStyle Style = UITableViewStyle.Grouped;
 
@@ -212,11 +213,18 @@ namespace MonoMobile.MVVM
 		{
 			return Autorotate || toInterfaceOrientation == UIInterfaceOrientation.Portrait;
 		}
+		
+		public override void WillRotate(UIInterfaceOrientation toInterfaceOrientation, double duration)
+		{
+			if (toInterfaceOrientation != UIInterfaceOrientation.PortraitUpsideDown)
+				base.WillRotate(toInterfaceOrientation, duration);
+		}
 
 		public override void DidRotate(UIInterfaceOrientation fromInterfaceOrientation)
 		{
 			base.DidRotate(fromInterfaceOrientation);
 			ReloadData();
+			ConfigureBackgroundImage();
 		}
 
 		/// <summary>
@@ -497,22 +505,31 @@ namespace MonoMobile.MVVM
 
 			private UIView CreateHeaderView(UITableView tableView, string caption)
 			{
-				var bounds = tableView.Bounds;
 				var headerLabel = new UILabel();
 
 				headerLabel.Font = UIFont.BoldSystemFontOfSize(UIFont.LabelFontSize);
 				var size = headerLabel.StringSize(caption, headerLabel.Font);
-				var rect = new RectangleF(bounds.X + 20, bounds.Y, bounds.Width - 20, size.Height + 10);
 				
-				headerLabel.Bounds = rect;
-				headerLabel.Frame = headerLabel.Bounds;
-				headerLabel.BackgroundColor = UIColor.Clear;
+				var bounds = new RectangleF(tableView.Bounds.X, tableView.Bounds.Y, tableView.Bounds.Width, size.Height + 10);
+				var frame = new RectangleF(bounds.X + 20, bounds.Y, bounds.Width - 20, size.Height + 10);
+	
+				headerLabel.Bounds = bounds;
+				headerLabel.Frame = frame;
+				
 				headerLabel.TextColor = UIColor.FromRGB(76, 86, 108);
 				headerLabel.ShadowColor = UIColor.White;
 				headerLabel.ShadowOffset = new SizeF(0, 1);
 				headerLabel.Text = caption;
+				
+				var view = new UIView(bounds) { BackgroundColor = tableView.BackgroundColor };
 
-				var view = new UIView(rect);
+				if (tableView.Style == UITableViewStyle.Grouped)
+				{
+					headerLabel.BackgroundColor = UIColor.Clear;
+					view.Opaque = false;
+					view.BackgroundColor = UIColor.Clear;
+				}
+
 				view.AddSubview(headerLabel);
 
 				return view;
@@ -719,47 +736,53 @@ namespace MonoMobile.MVVM
 
 		private void ConfigureBackgroundImage()
 		{
-			UIColor color = null;
-			if (BackgroundImage == null)
+			if (BackgroundColor == null)
 			{
-				if (Root != null)
+				if (BackgroundImage == null)
 				{
-					if (Root.Theme.BackgroundUri != null)
+					if (Root != null)
 					{
-						var imageUri = Root.Theme.BackgroundUri;
-						BackgroundImage = ImageLoader.DefaultRequestImage(imageUri, null);
-					}
-					
-					if (Root.Theme.BackgroundColor != null)
-					{
-						color = Root.Theme.BackgroundColor;
-					}
-
-					if (Root.Theme.BackgroundImage != null)
-					{
-						BackgroundImage = Root.Theme.BackgroundImage;
+						if (Root.Theme.BackgroundUri != null)
+						{
+							var imageUri = Root.Theme.BackgroundUri;
+							BackgroundImage = ImageLoader.DefaultRequestImage(imageUri, null);
+						}
+						
+						if (Root.Theme.BackgroundColor != null)
+						{
+							BackgroundColor = Root.Theme.BackgroundColor;
+						}
+		
+						if (Root.Theme.BackgroundImage != null)
+						{
+							BackgroundImage = Root.Theme.BackgroundImage;
+						}
 					}
 				}
-			}
-
-			if (BackgroundImage != null)
-			{
-				color = UIColor.FromPatternImage(BackgroundImage);
+		
+				if (BackgroundImage != null)
+				{
+					BackgroundColor = UIColor.FromPatternImage(BackgroundImage);
+				}
 			}
 				
-			if (color != null)
+			if (BackgroundColor != null)
 			{
 				if (TableView.RespondsToSelector(new Selector("backgroundView")))
-					TableView.BackgroundView = new UIView() { Opaque = false };
-
+				{
+					if (TableView.BackgroundView == null)
+					{
+						TableView.BackgroundView = new UIView() { Opaque = false, BackgroundColor = UIColor.Clear };
+					}
+				}
 				if (ParentViewController != null)
 				{
 					TableView.BackgroundColor = UIColor.Clear;
-					ParentViewController.View.BackgroundColor = color;
+					ParentViewController.View.BackgroundColor = BackgroundColor;
 				} 
 				else
 				{
-					TableView.BackgroundColor = color;
+					TableView.BackgroundColor = BackgroundColor;
 				}
 			}
 		}

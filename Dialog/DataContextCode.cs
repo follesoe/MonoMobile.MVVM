@@ -36,7 +36,9 @@ namespace MonoMobile.MVVM
 		Object,
 		Enum,
 		EnumCollection,
-		Enumerable
+		MultiselectCollection,
+		Enumerable,
+		ViewEnumerable
 	}
 }
 
