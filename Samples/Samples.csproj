@@ -38,7 +38,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhoneSimulator' ">
     <DebugType>none</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\iPhoneSimulator\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -73,7 +73,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|iPhone' ">
     <DebugType>none</DebugType>
-    <Optimize>false</Optimize>
+    <Optimize>true</Optimize>
     <OutputPath>bin\iPhone\Release</OutputPath>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
@@ -99,7 +99,6 @@
     <None Include="Info.plist" />
     <None Include="AppIcon.png" />
     <None Include="AppIcon4.png" />
-    <None Include="Default.png" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -113,13 +112,10 @@
     <Compile Include="ViewModels\InterestingViewModel.cs" />
     <Compile Include="Converters\FontConverter.cs" />
     <Compile Include="Views\View1.cs" />
-    <Compile Include="Converters\CurrentMovieConverter.cs" />
     <Compile Include="Views\WebSamples.cs" />
-    <Compile Include="Views\ElementAPIView.cs" />
     <Compile Include="ViewModels\MovieListViewModel.cs" />
     <Compile Include="Themes\AutumnTheme.cs" />
     <Compile Include="Themes\BrickedTheme.cs" />
-    <Compile Include="Themes\ClearTheme.cs" />
     <Compile Include="Themes\CorkTheme.cs" />
     <Compile Include="Themes\DarkHeaderTheme.cs" />
     <Compile Include="Themes\DenimTheme.cs" />
@@ -136,11 +132,13 @@
     <Compile Include="Themes\NavbarTheme.cs" />
     <Compile Include="Views\ThemeSampleView.cs" />
     <Compile Include="ViewModels\ThemeSampleViewModel.cs" />
-    <Compile Include="Views\HoneyDoList.cs" />
-    <Compile Include="AppDelegate.cs" />
     <Compile Include="ViewModels\HoneyDoListViewModel.cs" />
     <Compile Include="Views\ButtonTestView.cs" />
     <Compile Include="Views\TestView.cs" />
+    <Compile Include="Controls\UIGlassyButton.cs" />
+    <Compile Include="AppDelegate.cs" />
+    <Compile Include="Views\EnumerableTest.cs" />
+    <Compile Include="Views\HoneyDoListView.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ProjectExtensions>
@@ -155,6 +153,7 @@
     <Folder Include="Converters\" />
     <Folder Include="Images\" />
     <Folder Include="Themes\" />
+    <Folder Include="Controls\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Images\cork.png" />
@@ -177,6 +176,7 @@
     <Content Include="Images\bluemac.jpg" />
     <Content Include="Images\worntexture.jpg" />
     <Content Include="Images\honeycomb.jpg" />
+    <Content Include="Default.png" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\MonoMobile.MVVM.csproj">

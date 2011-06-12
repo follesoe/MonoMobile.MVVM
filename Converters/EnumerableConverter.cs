@@ -30,22 +30,33 @@
 namespace MonoMobile.MVVM
 {
 	using System;
+	using System.Collections;
 	using System.Globalization;
 	using MonoMobile.MVVM;
 	using MonoTouch.Foundation;
 
-	[Preserve(AllMembers=true)]
+	[Preserve(AllMembers = true)]
 	public class EnumerableConverter : IValueConverter
 	{
+		private object _OldValue;
 		//RK: Temporarily not implemented until I decide how to handle this case
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			throw new NotSupportedException();
+			_OldValue = value;
+			var container = parameter as IContainer;
+			if (container != null)
+			{
+				var list = container.SelectedItems as ICollection;
+				if (list != null)
+					return list.Count.ToString();
+			}
+			
+			return null;
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			throw new NotSupportedException();
+			return _OldValue;
 		}
 	}
 }

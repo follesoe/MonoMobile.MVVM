@@ -31,12 +31,13 @@
 //
 namespace MonoMobile.MVVM
 {
+	using System.Linq;
 	using MonoTouch.Foundation;
 	using MonoTouch.UIKit;
 	using MonoMobile.MVVM;
 
 	public partial class CheckboxElement : BoolElement, ISelectable
-	{
+	{		
 		public string Group { get; set; }
 
 		public CheckboxElement(string caption) : base(caption)
@@ -49,16 +50,57 @@ namespace MonoMobile.MVVM
 			//There is a visual artifact when using Checkmark and UITableViewCellSelectionStyle.Blue;
 			Cell.SelectionStyle = UITableViewCellSelectionStyle.None;
 			
-			Value = (bool)ValueProperty.Value;
-			ValueProperty.Update();
+			//DataContext = (bool)DataContextProperty.Value;
+			DataContextProperty.Update();
 			UpdateSelected();
 		}
 		
 		public override void UpdateSelected()
 		{
 			Cell.AccessoryView = null;
-			Cell.Accessory = (bool)Value ? UITableViewCellAccessory.Checkmark : UITableViewCellAccessory.None;
+			Cell.Accessory = (bool)DataContext ? UITableViewCellAccessory.Checkmark : UITableViewCellAccessory.None;
 			Cell.TextLabel.Text = Caption;
+
+			var containsItem = false;
+			if (Container != null)
+			{
+				containsItem = Container.SelectedItems.Contains(Item);
+
+				if ((bool)DataContext && !containsItem)
+				{
+					Container.SelectedItems.Add(Item);
+					Container.SelectedItem = Item;
+				}
+				
+				if (!(bool)DataContext && containsItem)
+				{
+					Container.SelectedItems.Remove(Item);
+				}
+			
+			
+				var enumBinder = Item as EnumItem;
+				if (enumBinder != null)
+				{
+					enumBinder.IsChecked = (bool)DataContext;
+					Root.DataContext = Container.SelectedItems.Count.ToString();
+				}
+			
+				var property = BindableProperty.GetBindableProperty(Container, "SelectedItemProperty");
+				if (property != null)
+					property.Update();
+
+				property = BindableProperty.GetBindableProperty(Container, "SelectedItemsProperty");
+				if (property != null)
+					property.Update();
+
+				property = BindableProperty.GetBindableProperty(Root, "DataContextProperty");
+				if (property != null)
+					property.Update();
+
+				property = BindableProperty.GetBindableProperty(Container, "IndexProperty");
+				if (property != null)
+					property.Update();
+			}
 		}
 
 		public override string ToString()
@@ -68,8 +110,8 @@ namespace MonoMobile.MVVM
 	
 		public void Selected(DialogViewController dvc, UITableView tableView, NSIndexPath path)
 		{
-			Value = !Value;
-			ValueProperty.Update();
+			DataContext = !(bool)DataContext;
+			DataContextProperty.Update();
 			UpdateSelected();
 		}
 

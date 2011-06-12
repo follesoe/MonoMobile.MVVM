@@ -31,6 +31,8 @@ namespace MonoMobile.MVVM
 {
 	using System.Collections;
 	using System.Collections.Generic;
+	using System.Collections.ObjectModel;
+	using System.ComponentModel;
 	using System.Drawing;
 	using MonoTouch.Foundation;
 	using MonoTouch.UIKit;
@@ -38,16 +40,15 @@ namespace MonoMobile.MVVM
 	/// <summary>
 	/// Generic base version of Section
 	/// </summary>
-	[Preserve(AllMembers=true)]
-	public partial class Section : StringElement, ISection, IEnumerable
+	[Preserve(AllMembers = true)]
+	public partial class Section : ContainerElement, ISection, IEnumerable, ISupportInitialize
 	{
 		private UIView _Header, _Footer;
 
-		public List<IElement> Elements { get; set; }
+		public ObservableCollection<IElement> Elements { get; set; }
 		
 		public new IRoot Root { get { return Parent as IRoot; } }
-		
-		public bool IsMultiselect { get; set; }
+
 
 		/// <summary>
 		///  Constructs a Section without header or footers.
@@ -64,8 +65,11 @@ namespace MonoMobile.MVVM
 		/// </param>
 		public Section(string caption) : base(caption)
 		{
-			Elements = new List<IElement>();
+			Elements = new ObservableCollection<IElement>();
 			BindProperties();
+			
+			UpdateTargets();
+			UpdateSources();
 		}
 
 		/// <summary>
@@ -349,7 +353,7 @@ namespace MonoMobile.MVVM
 			if (start + count > Elements.Count)
 				count = Elements.Count - start;
 			
-			Elements.RemoveRange(start, count);
+	//		Elements.RemoveRange(start, count);
 			
 			if (Root == null || Root.TableView == null)
 				return;
@@ -393,7 +397,7 @@ namespace MonoMobile.MVVM
 		{
 			foreach (var e in Elements)
 				e.Dispose();
-			Elements = new List<IElement>();
+			Elements = new ObservableCollection<IElement>();
 			
 			if (Root != null && Root.TableView != null)
 				Root.TableView.ReloadData();
@@ -412,6 +416,15 @@ namespace MonoMobile.MVVM
 		public override void InitializeCell(UITableView tableView)
 		{
 			Cell.TextLabel.Text = "Section was used for Element";
+		}
+
+		public override void BeginInit()
+		{
+			//Elements.ForEach((element)=>element.BeginInit());
+		}
+
+		public override void EndInit()
+		{
 		}
 	}
 }

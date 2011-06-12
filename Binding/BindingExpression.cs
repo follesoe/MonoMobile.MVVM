@@ -30,6 +30,8 @@
 namespace MonoMobile.MVVM
 {
 	using System;
+	using System.Collections;
+	using System.Linq;
 	using System.Reflection;
 	using System.Globalization;
 	using MonoTouch.UIKit;
@@ -75,6 +77,7 @@ namespace MonoMobile.MVVM
 			object viewSource = Binding.Source;
 			_ViewProperty = viewSource.GetType().GetNestedMember(ref viewSource, Binding.SourcePath, true);
 			Binding.ViewSource = viewSource;
+			SourceProperty = _ViewProperty;
 
 			var dataContext = viewSource as IDataContext;
 			if (dataContext != null && dataContext.DataContext != null)
@@ -106,7 +109,8 @@ namespace MonoMobile.MVVM
 				try
 				{
 					object convertedTargetValue = ConvertbackValue(targetValue, member);
-
+					
+					convertedTargetValue = CheckAndCoerceToGenericEnumerable(member.GetMemberType(), convertedTargetValue);
 					SetValue(member, obj, convertedTargetValue);	
 				}
 				catch (InvalidCastException)
@@ -123,7 +127,8 @@ namespace MonoMobile.MVVM
 
 		public void UpdateTarget()
 		{
-			UpdateTarget(GetSourceValue());
+			var sourceValue = GetSourceValue();
+			UpdateTarget(sourceValue);
 		}
 
 		public void UpdateTarget(object sourceValue)
@@ -139,6 +144,7 @@ namespace MonoMobile.MVVM
 
 				if (Element != null && Element.Cell != null && Element.Cell.Element == Element)
 				{
+					convertedSourceValue = CheckAndCoerceToObjectEnumerable(convertedSourceValue);
 					SetValue(TargetProperty, Binding.Target, convertedSourceValue);
 				}
 
@@ -149,11 +155,11 @@ namespace MonoMobile.MVVM
 		{
 			object convertedValue = value;
 			
-			var memberType = GetMemberType(TargetProperty);
+			var memberType = TargetProperty.GetMemberType();
 
 			if (Binding.Converter != null)
 			{
-				try
+//				try
 				{
 					object parameter = Element;
 					if (Binding.ConverterParameter != null)
@@ -161,9 +167,9 @@ namespace MonoMobile.MVVM
 	
 					convertedValue = Binding.Converter.Convert(value, memberType, parameter, CultureInfo.CurrentUICulture);
 				}
-				catch (InvalidCastException) {}
-				catch (NotSupportedException) {}
-				catch (NotImplementedException) {}
+//				catch (InvalidCastException) {}
+//				catch (NotSupportedException) {}
+//				catch (NotImplementedException) {}
 			}
 
 			var typeCode = Convert.GetTypeCode(convertedValue);
@@ -179,27 +185,35 @@ namespace MonoMobile.MVVM
 		{
 			object convertedValue = value;
 			var convertSupported = true;
-
+			
+			try
+			{
 			if (Binding.Converter != null)
 			{
-				try
+//				try
 				{
 					object parameter = Element;
 					if (Binding.ConverterParameter != null)
 						parameter = Binding.ConverterParameter;
 					
-					convertedValue = Binding.Converter.ConvertBack(value, GetMemberType(member), parameter, CultureInfo.CurrentUICulture);
+					convertedValue = Binding.Converter.ConvertBack(value, member.GetMemberType(), parameter, CultureInfo.CurrentUICulture);
 				}
-				catch (InvalidCastException) {}
-				catch (NotSupportedException) { convertSupported = false; }
-				catch (NotImplementedException) { convertSupported = false; }
+//				catch (InvalidCastException) {}
+//				catch (NotSupportedException) { convertSupported = false; }
+//				catch (NotImplementedException) { convertSupported = false; }
 			}
 			
 			if (convertSupported)
 			{
 				var typeCode = Convert.GetTypeCode(convertedValue);
 				if (typeCode != TypeCode.Object && typeCode != TypeCode.Empty && typeCode != TypeCode.Int32)
-					convertedValue = Convert.ChangeType(convertedValue, GetMemberType(member));
+					convertedValue = Convert.ChangeType(convertedValue, member.GetMemberType());
+			}
+			}
+			catch(FormatException)
+			{
+				var message = string.Format("{0} is a {1} but {2} is a {3}. Did you forget to specify an IValueConverter?", convertedValue, convertedValue.GetType(), member.Name, member.GetMemberType());
+				throw new FormatException(message);
 			}
 
 			return convertedValue;
@@ -240,21 +254,6 @@ namespace MonoMobile.MVVM
 			return TargetProperty.GetValue(Binding.Target);
 		}
 
-		private Type GetMemberType(MemberInfo member)
-		{
-			if (member.MemberType == MemberTypes.Field)
-			{
-				return ((FieldInfo)member).FieldType;
-			}
-			
-			if (member.MemberType == MemberTypes.Property)
-			{
-				return ((PropertyInfo)member).PropertyType;
-			}
-			
-			return null;
-		}
-
 		private void SetValue(MemberInfo member, object obj, object value)
 		{
 			try
@@ -269,9 +268,58 @@ namespace MonoMobile.MVVM
 					((PropertyInfo)member).SetValue(obj, value, null);
 				}
 			}
-			catch 
+			catch (Exception ex)
 			{
+				var message = string.Format("{0} : {1} : {2}", ex.Message, member.Name, value.ToString());
+				Console.WriteLine(message);
 			}
+		}
+
+		private object CheckAndCoerceToGenericEnumerable(Type type, object value)
+		{
+			object result = value;
+			if (result != null)
+			{
+				var isList = typeof(IEnumerable).IsAssignableFrom(type);
+				
+				if (type.IsGenericType && isList)
+				{
+					var genericTypeDefinition = type.GetGenericTypeDefinition();
+					var genericType = type.GetGenericArguments().FirstOrDefault();
+					Type[] generic = { genericType };
+					
+					result = Activator.CreateInstance(genericTypeDefinition.MakeGenericType(generic));
+					
+					var list = result as IList;
+					if (list != null)
+						foreach (var item in (IList)value)
+							list.Add(item);
+				}
+			}
+			return result;
+		}
+
+		private object CheckAndCoerceToObjectEnumerable(object value)
+		{
+			object result = value;
+			if (result != null)
+			{
+				Type type = value.GetType();			
+				var isList = typeof(IEnumerable).IsAssignableFrom(type);
+							
+				if (type.IsGenericType && isList)
+				{
+					var genericTypeDefinition = type.GetGenericTypeDefinition();
+					Type[] generic = { typeof(object) };
+					result = Activator.CreateInstance(genericTypeDefinition.MakeGenericType(generic));
+					
+					var list = result as IList;
+					if (list != null)
+						foreach (var item in (IList)value)
+							list.Add(item);
+				}
+			}
+			return result;
 		}
 	}
 }

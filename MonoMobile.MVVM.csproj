@@ -132,7 +132,6 @@
     <Compile Include="Binding\IBindable.cs" />
     <Compile Include="Binding\BindingExpression.cs" />
     <Compile Include="Binding\BindingOperations.cs" />
-    <Compile Include="Collections\EnumBinder.cs" />
     <Compile Include="Collections\EnumCollection.cs" />
     <Compile Include="Commands\UICommand.cs" />
     <Compile Include="Commands\ICommand.cs" />
@@ -152,27 +151,22 @@
     <Compile Include="Dialog\Reflection API\EntryAttribute.cs" />
     <Compile Include="Dialog\Reflection API\DateAttribute.cs" />
     <Compile Include="Dialog\Reflection API\TimeAttribute.cs" />
-    <Compile Include="Dialog\Reflection API\CheckboxAttribute.cs" />
     <Compile Include="Dialog\Reflection API\MulitlineAttribute.cs" />
     <Compile Include="Dialog\Reflection API\HtmlAttribute.cs" />
     <Compile Include="Dialog\Reflection API\SkipAttribute.cs" />
     <Compile Include="Dialog\Reflection API\PasswordAttribute.cs" />
     <Compile Include="Dialog\Reflection API\ButtonAttribute.cs" />
     <Compile Include="Dialog\Reflection API\CaptionAttribute.cs" />
-    <Compile Include="Dialog\Reflection API\SectionAttribute.cs" />
     <Compile Include="Dialog\Reflection API\BindAttribute.cs" />
     <Compile Include="Dialog\Reflection API\RangeAttribute.cs" />
     <Compile Include="Dialog\RefreshTableHeaderView.cs" />
     <Compile Include="Dialog\Reflection API\OrderAttribute.cs" />
     <Compile Include="Extensions\TypeExtensions.cs" />
     <Compile Include="Converters\EnumConverter.cs" />
-    <Compile Include="Converters\EnumItemsConverter.cs" />
-    <Compile Include="Converters\ViewConverter.cs" />
     <Compile Include="Dialog\Reflection API\ListAttribute.cs" />
     <Compile Include="Converters\EnumerableConverter.cs" />
     <Compile Include="Dialog\Reflection API\RootAttribute.cs" />
     <Compile Include="Dialog\Reflection API\PopOnSelectionAttribute.cs" />
-    <Compile Include="Dialog\Reflection API\InlineAttribute.cs" />
     <Compile Include="Model\Model.cs" />
     <Compile Include="Model\IModel.cs" />
     <Compile Include="Dialog\Reflection API\MapAttribute.cs" />
@@ -182,7 +176,6 @@
     <Compile Include="Converters\UriConverter.cs" />
     <Compile Include="Dialog\Reflection API\NavbarButtonAttribute.cs" />
     <Compile Include="Dialog\Reflection API\BarButtonLocation.cs" />
-    <Compile Include="Controls\UIGlassyButton.cs" />
     <Compile Include="Controls\CommandBarButtonItem.cs" />
     <Compile Include="Dialog\DataContextCode.cs" />
     <Compile Include="Dialog\BindingContext.cs" />
@@ -211,7 +204,6 @@
     <Compile Include="Dialog\RootElement.cs" />
     <Compile Include="Dialog\Section.cs" />
     <Compile Include="Dialog\Reflection API\PullToRefreshAttribute.cs" />
-    <Compile Include="Dialog\Reflection API\EnableSearchAttribute.cs" />
     <Compile Include="Dialog\Views\StandardListView.cs" />
     <Compile Include="Dialog\SearchChangedEventArgs.cs" />
     <Compile Include="Dialog\ImageLoader.cs" />
@@ -232,8 +224,6 @@
     <Compile Include="Dialog\Reflection API\ViewAttribute.cs" />
     <Compile Include="Controls\ProgressHud.cs" />
     <Compile Include="Application\UrlConnection.cs" />
-    <Compile Include="Application\TinyIoC.cs" />
-    <Compile Include="Application\TinyMessenger.cs" />
     <Compile Include="Dialog\DataBinding\EntryElementBinding.cs" />
     <Compile Include="Dialog\DataBinding\ElementBinding.cs" />
     <Compile Include="Dialog\DataBinding\StringElementBinding.cs" />
@@ -264,15 +254,39 @@
     <Compile Include="Application\IObservableObject.cs" />
     <Compile Include="Dialog\DataBinding\CheckboxElementBinding.cs" />
     <Compile Include="Dialog\DataBinding\RootElementBinding.cs" />
-    <Compile Include="Controls\KeyboardToolBar.cs" />
-    <Compile Include="Controls\ListView\ListView.cs" />
-    <Compile Include="Controls\ListView\ListViewSource.cs" />
-    <Compile Include="Collections\MultiselectCollection.cs" />
-    <Compile Include="Converters\MultiselectCollectionConverter.cs" />
     <Compile Include="Dialog\DataBinding\SectionBinding.cs" />
     <Compile Include="Dialog\DataBinding\RadioElementBinding.cs" />
     <Compile Include="Dialog\ViewParser.cs" />
     <Compile Include="Extensions\ThemeExtentions.cs" />
+    <Compile Include="Controls\UIDatePickerToolbar.cs" />
+    <Compile Include="Controls\UIKeyboardToolBar.cs" />
+    <Compile Include="Controls\UIInputViewToolBar.cs" />
+    <Compile Include="Dialog\Elements\FocusableElement.cs" />
+    <Compile Include="Extensions\UIDevice.cs" />
+    <Compile Include="Dialog\Themes\ClearTheme.cs" />
+    <Compile Include="Dialog\Reflection API\SearchbarAttribute.cs" />
+    <Compile Include="Application\MonoMobileAppDelegate.cs" />
+    <Compile Include="Dialog\Reflection API\CheckmarkAttribute.cs" />
+    <Compile Include="Extensions\DateExtentions.cs" />
+    <Compile Include="Converters\DateTimeConverter.cs" />
+    <Compile Include="Converters\EnumCollectionConverter.cs" />
+    <Compile Include="Binding\DataBindingException.cs" />
+    <Compile Include="Converters\ViewConverter.cs" />
+    <Compile Include="Converters\ViewModelConverter.cs" />
+    <Compile Include="Dialog\Themes\PlainTheme.cs" />
+    <Compile Include="Dialog\Themes\GroupedTheme.cs" />
+    <Compile Include="Interfaces\INotifyDataContextChanged.cs" />
+    <Compile Include="Dialog\ContainerElement.cs" />
+    <Compile Include="Interfaces\IContainer.cs" />
+    <Compile Include="Dialog\DataBinding\ContainerElementBinding.cs" />
+    <Compile Include="Dialog\Reflection API\SectionAttribute.cs" />
+    <Compile Include="Dialog\Reflection API\SelectionAttribute.cs" />
+    <Compile Include="Dialog\Reflection API\MultiselectionAttribute.cs" />
+    <Compile Include="Collections\EnumItem.cs" />
+    <Compile Include="View\ActionSheetView.cs" />
+    <Compile Include="Extensions\StringExtensions.cs" />
+    <Compile Include="Application\Alert.cs" />
+    <Compile Include="Application\MonoMobileApplication.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Images\" />
@@ -293,6 +307,7 @@
     <Folder Include="Dialog\Cell\" />
     <Folder Include="Dialog\DataBinding\" />
     <Folder Include="Interfaces\" />
+    <Folder Include="Dialog\Themes\" />
   </ItemGroup>
   <ItemGroup>
     <None Include="README.markdown" />

@@ -55,7 +55,8 @@ namespace MonoMobile.MVVM
 		private ISection[] _OriginalSections;
 		private IElement[][] _OriginalElements;
 		private Source _TableSource;
-
+		
+		public bool IsModal { get; set; }  
 		public UIImage BackgroundImage { get; set; }
 		public UIColor BackgroundColor { get; set; }
 
@@ -91,15 +92,6 @@ namespace MonoMobile.MVVM
 				}
 			}
 		}
-
-		// If set, we automatically scroll the content to avoid showing the search bar until 
-		// the user manually pulls it down.
-		public bool AutoHideSearch { get; set; }
-		public string SearchPlaceholder { get; set; }
-		public bool EnableSearch { get; set; }
-		public bool IncrementalSearch { get; set; }
-		public SearchCommand SearchCommand { get; set; }
-
 
 		public bool EnablePullToRefresh 
 		{ 
@@ -149,7 +141,7 @@ namespace MonoMobile.MVVM
 				return;
 			
 			_Reloading = true;
-			
+
 			if (_Reloading && showStatus && _RefreshView != null)
 			{
 				UIView.BeginAnimations("reloadingData");
@@ -211,13 +203,17 @@ namespace MonoMobile.MVVM
 
 		public override bool ShouldAutorotateToInterfaceOrientation(UIInterfaceOrientation toInterfaceOrientation)
 		{
-			return Autorotate || toInterfaceOrientation == UIInterfaceOrientation.Portrait;
+			return (Autorotate || toInterfaceOrientation == UIInterfaceOrientation.Portrait) && toInterfaceOrientation != UIInterfaceOrientation.PortraitUpsideDown;
 		}
 		
 		public override void WillRotate(UIInterfaceOrientation toInterfaceOrientation, double duration)
 		{
-			if (toInterfaceOrientation != UIInterfaceOrientation.PortraitUpsideDown)
-				base.WillRotate(toInterfaceOrientation, duration);
+			var orientation = toInterfaceOrientation;
+
+			if (toInterfaceOrientation == UIInterfaceOrientation.PortraitUpsideDown)
+				orientation = UIInterfaceOrientation.Portrait;
+
+			base.WillRotate(orientation, duration);
 		}
 
 		public override void DidRotate(UIInterfaceOrientation fromInterfaceOrientation)
@@ -231,33 +227,74 @@ namespace MonoMobile.MVVM
 		/// Allows caller to programatically activate the search bar and start the search process
 		/// </summary>
 		public void StartSearch()
-		{
-			if (_OriginalSections != null)
-				return;
+		{		
+			var searchbar = Root as ISearchBar;
+			if (searchbar != null && searchbar.IsSearchbarHidden || _Searchbar == null)
+			{
+				TableView.ScrollToRow(NSIndexPath.FromRowSection(0, 0), UITableViewScrollPosition.Top, true);
+
+				CreateSearchbar();
 			
-			_Searchbar.BecomeFirstResponder();
+				UIView.BeginAnimations(null);
+				UIView.SetAnimationDuration(0.3);
+				
+				_Searchbar.Frame = new RectangleF(0, 0, _Searchbar.Frame.Width, 45);
+	
+				TableView.TableHeaderView = _Searchbar;
 
-			_OriginalSections = Root.Sections.ToArray();
-			_OriginalElements = new IElement[_OriginalSections.Length][];
-
-			for (int i = 0; i < _OriginalSections.Length; i++)
-				_OriginalElements[i] = _OriginalSections[i].Elements.ToArray();
+				if (_OriginalSections == null)
+				{
+					_OriginalSections = Root.Sections.ToArray();
+					_OriginalElements = new IElement[_OriginalSections.Length][];
+		
+					for (int i = 0; i < _OriginalSections.Length; i++)
+						_OriginalElements[i] = _OriginalSections[i].Elements.ToArray();
+				}
+			
+				UIView.CommitAnimations();
+			}
 		}
 
 		/// <summary>
 		/// Allows the caller to programatically stop searching.
 		/// </summary>
-		public virtual void FinishSearch()
+		public virtual void FinishSearch(bool hide)
 		{
-			if (_OriginalSections == null)
-				return;
+			if (_OriginalSections != null)
+			{
+				Root.Sections = new List<ISection>(_OriginalSections);
+				_OriginalSections = null;
+				_OriginalElements = null;
+				
+				ReloadData();
+			}
 			
-			Root.Sections = new List<ISection>(_OriginalSections);
-			_OriginalSections = null;
-			_OriginalElements = null;
+			if (hide)
+			{
+				UIView.BeginAnimations(null);
+				UIView.SetAnimationDuration(0.3);
+				
+				// we need to perform some post operations after the animation is complete
+				UIView.SetAnimationDelegate(this);
+				UIView.SetAnimationDidStopSelector(new Selector("fadeOutDidFinish"));
+				
+				_Searchbar.Frame = new RectangleF(0, -45, _Searchbar.Frame.Width, 45);
+				
+				TableView.ContentOffset = new PointF(0, 45);
+				UIView.CommitAnimations();
+			}
 
-			ReloadData();
-			HideSearch();
+			_Searchbar.ResignFirstResponder();
+			_Searchbar.Text = string.Empty;
+		}
+
+		[Export("fadeOutDidFinish")]
+		public void FadeOutDidFinish()
+		{
+			_Searchbar.Hidden = true;
+
+			TableView.TableHeaderView = null;
+			TableView.ContentOffset = PointF.Empty;
 		}
 
 		public delegate void SearchTextEventHandler(object sender, SearchChangedEventArgs args);
@@ -278,37 +315,41 @@ namespace MonoMobile.MVVM
 			
 			var newSections = new List<ISection>();
 			
-			if (SearchCommand == null)
+			var searchable = Root as ISearchBar;
+			if (searchable != null)
 			{
-				for (int sidx = 0; sidx < _OriginalSections.Length; sidx++)
+				if (searchable.SearchCommand == null)
 				{
-					ISection newSection = null;
-					var section = _OriginalSections[sidx];
-					IElement[] elements = _OriginalElements[sidx];
-					
-					for (int eidx = 0; eidx < elements.Length; eidx++)
+					for (int sidx = 0; sidx < _OriginalSections.Length; sidx++)
 					{
-						var searchableView = elements[eidx] as ISearchable;
+						ISection newSection = null;
+						var section = _OriginalSections[sidx];
+						IElement[] elements = _OriginalElements[sidx];
 						
-						if (searchableView != null && searchableView.Matches(text))
+						for (int eidx = 0; eidx < elements.Length; eidx++)
 						{
-							if (newSection == null)
+							var searchableView = elements[eidx] as ISearchable;
+							
+							if ((searchableView != null && searchableView.Matches(text)) || (elements[eidx].Caption != null) && elements[eidx].Caption.Contains(text))
 							{
-								newSection = new Section(section.HeaderText, section.FooterText) { FooterView = section.FooterView, HeaderView = section.HeaderView };
-								newSections.Add(newSection);
+								if (newSection == null)
+								{
+									newSection = new Section(section.HeaderText, section.FooterText) { FooterView = section.FooterView, HeaderView = section.HeaderView };
+									newSections.Add(newSection);
+								}
+								newSection.Add(elements[eidx]);
 							}
-							newSection.Add(elements[eidx]);
 						}
 					}
 				}
-			}
-			else
-			{
-				newSections = SearchCommand.Execute(_OriginalSections, text);
+				else
+				{
+					newSections = searchable.SearchCommand.Execute(_OriginalSections, text);
+				}
 			}
 			
 			Root.Sections = newSections;
-			
+
 			ReloadData();
 		}
 
@@ -328,11 +369,12 @@ namespace MonoMobile.MVVM
 			public override void OnEditingStarted(UISearchBar _Searchbar)
 			{
 				_Searchbar.ShowsCancelButton = true;
-
-				if (_Container.IncrementalSearch)
+				
+				var searchable = _Container.Root as ISearchBar;
+				if (searchable != null && searchable.IncrementalSearch)
 				{
 					var textField = _Searchbar.Subviews.FirstOrDefault((v)=>v.GetType() == typeof(UITextField)) as UITextField;
-					if(textField != null)
+					if (textField != null)
 						textField.ReturnKeyType = UIReturnKeyType.Done;	
 				}
 
@@ -341,29 +383,33 @@ namespace MonoMobile.MVVM
 
 			public override void OnEditingStopped(UISearchBar _Searchbar)
 			{
-				if (_Container.IncrementalSearch)
+				var searchable = _Container.Root as ISearchBar;
+				if (searchable != null && searchable.IncrementalSearch)
 				{
 					_Searchbar.ShowsCancelButton = false;
-					_Container.FinishSearch();
+					_Container.FinishSearch(false);
 				}
 			}
 			public override void TextChanged(UISearchBar _Searchbar, string searchText)
 			{
-				if (_Container.IncrementalSearch)
+				var searchable = _Container.Root as ISearchBar;
+				if (searchable != null && searchable.IncrementalSearch)
 					_Container.PerformFilter(searchText ?? "");
 			}
 
 			public override void CancelButtonClicked(UISearchBar _Searchbar)
 			{
 				_Searchbar.ShowsCancelButton = false;
-				_Container.FinishSearch();
+				_Container.FinishSearch(false);
 			}
 
 			public override void SearchButtonClicked(UISearchBar _Searchbar)
 			{
 				_Container.SearchButtonClicked(_Searchbar.Text);
-				if (_Container.IncrementalSearch)
-					_Container.FinishSearch();
+				var searchable = _Container.Root as ISearchBar;
+
+				if (searchable != null && searchable.IncrementalSearch)
+					_Container.FinishSearch(false);
 				else
 					_Container.PerformFilter(_Searchbar.Text);
 			}
@@ -505,13 +551,15 @@ namespace MonoMobile.MVVM
 
 			private UIView CreateHeaderView(UITableView tableView, string caption)
 			{
+				var indentation = UIDevice.CurrentDevice.GetIndentation();
+
 				var headerLabel = new UILabel();
 
 				headerLabel.Font = UIFont.BoldSystemFontOfSize(UIFont.LabelFontSize);
 				var size = headerLabel.StringSize(caption, headerLabel.Font);
 				
 				var bounds = new RectangleF(tableView.Bounds.X, tableView.Bounds.Y, tableView.Bounds.Width, size.Height + 10);
-				var frame = new RectangleF(bounds.X + 20, bounds.Y, bounds.Width - 20, size.Height + 10);
+				var frame = new RectangleF(bounds.X + indentation + 10, bounds.Y, bounds.Width - (indentation + 10), size.Height + 10);
 	
 				headerLabel.Bounds = bounds;
 				headerLabel.Frame = frame;
@@ -537,18 +585,28 @@ namespace MonoMobile.MVVM
 			
 			private UIView CreateFooterView(UITableView tableView, string caption)
 			{
+				var indentation = UIDevice.CurrentDevice.GetIndentation();
+
 				var bounds = tableView.Bounds;
 				var footerLabel = new UILabel();
-
+				var width =  bounds.Width - (indentation * 2);				
+				var linefeeds = caption.Count( ch => ch == '\n');
+				
 				footerLabel.Font = UIFont.SystemFontOfSize(15);
 				var size = footerLabel.StringSize(caption, footerLabel.Font);
-				var height = size.Height * (caption.Count((ch)=>ch == '\n') + 1); 
-				caption = caption.Replace("\n","");
-				var rect = new RectangleF(bounds.X + 10, bounds.Y, bounds.Width - 20, height + 10);
+
+				footerLabel.Lines = 1 + ((int)(size.Width / width)) + linefeeds;
+				if (size.Width % width == 0)
+					footerLabel.Lines--;
+
+				var height = size.Height * (footerLabel.Lines);
+
+				var rect = new RectangleF(bounds.X + indentation, bounds.Y, width, height + 10);
 				
 				footerLabel.Bounds = rect;
 				footerLabel.BackgroundColor = UIColor.Clear;
 				footerLabel.TextAlignment = UITextAlignment.Center;
+				footerLabel.LineBreakMode = UILineBreakMode.WordWrap;
 				footerLabel.TextColor = UIColor.FromRGB(76, 86, 108);
 				footerLabel.ShadowColor = UIColor.White;
 				footerLabel.ShadowOffset = new SizeF(0, 1);
@@ -598,6 +656,7 @@ namespace MonoMobile.MVVM
 			if (typeof(DialogViewController) == controller.GetType())
 			{
 				var dialog = (DialogViewController)controller;
+
 				dialog.TableView.Opaque = false;
 				
 				if (dialog.BackgroundImage == null)
@@ -626,37 +685,6 @@ namespace MonoMobile.MVVM
 				DismissModalViewControllerAnimated(animated);
 		}
 
-		private void SetupSearch()
-		{
-			var searchbar = Root as ISearchBar;
-			if (searchbar != null)
-			{
-				IncrementalSearch = searchbar.IncrementalSearch ?  IncrementalSearch || searchbar.IncrementalSearch : false;
-				AutoHideSearch = AutoHideSearch || searchbar.AutoHideSearch;
-				EnableSearch = EnableSearch || searchbar.EnableSearch;
-				SearchCommand = SearchCommand ?? searchbar.SearchCommand;
-
-				if (string.IsNullOrEmpty(SearchPlaceholder))
-					SearchPlaceholder = searchbar.SearchPlaceholder;
-			}
-
-			if (EnableSearch)
-			{
-				_Searchbar = new UISearchBar(new RectangleF(0, 0, TableView.Bounds.Width, TableView.RowHeight)) { Delegate = new SearchDelegate(this) };
-				
-				if (SearchPlaceholder != null)
-					_Searchbar.Placeholder = SearchPlaceholder;
-
-				TableView.TableHeaderView = _Searchbar;	
-			}
-			else if (TableView.TableHeaderView != null)
-			{
-				// For some reason setting to null when already null causes it to shift a few pixels down
-				// Should work for MonoTouch 3.0
-				//TableView.TableHeaderView = null;
-			}
-		}
-
 		public void Selected(NSIndexPath indexPath)
 		{
 			var section = Root.Sections[indexPath.Section];
@@ -671,7 +699,7 @@ namespace MonoMobile.MVVM
 					
 					UIView.Animate(0.3f, delegate { element.Cell.Highlighted = true;  }, delegate { element.Cell.Highlighted = false; });
 				}
-
+				
 				selectable.Selected(this, TableView, indexPath);
 			}
 		}
@@ -693,7 +721,6 @@ namespace MonoMobile.MVVM
 			}
 
 			_TableView = MakeTableView(UIScreen.MainScreen.Bounds, Style);
-
 			TableView = _TableView;
 
 			TableView.AutoresizingMask = UIViewAutoresizing.FlexibleHeight | UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleTopMargin;
@@ -701,14 +728,11 @@ namespace MonoMobile.MVVM
 
 			UpdateSource();
 			View = TableView;
-		
-			SetupSearch();
 
 			if (Root == null)
 				return;
 			
 			ConfigureToolbarItems();
-			ConfigureBackgroundImage();
 
 			Root.TableView = TableView;
 			
@@ -724,6 +748,20 @@ namespace MonoMobile.MVVM
 			}
 
 			EnablePullToRefresh = Root.PullToRefreshCommand != null;
+		}
+		
+		public override void ViewDidAppear(bool animated)
+		{
+			base.ViewDidAppear(animated);
+		
+			var searchBar = Root as ISearchBar;
+			if (searchBar != null)
+			{
+				if (searchBar.EnableSearch && !searchBar.IsSearchbarHidden)
+				{
+					StartSearch();
+				}
+			}
 		}
 
 		private void ConfigureToolbarItems()
@@ -770,12 +808,14 @@ namespace MonoMobile.MVVM
 			{
 				if (TableView.RespondsToSelector(new Selector("backgroundView")))
 				{
-					if (TableView.BackgroundView == null)
-					{
-						TableView.BackgroundView = new UIView() { Opaque = false, BackgroundColor = UIColor.Clear };
-					}
+					//if (TableView.BackgroundView == null)
+						TableView.BackgroundView = new UIView(); 
+
+					TableView.BackgroundView.Opaque = false;
+					TableView.BackgroundColor = UIColor.Clear;
 				}
-				if (ParentViewController != null)
+
+				if (ParentViewController != null && !IsModal)
 				{
 					TableView.BackgroundColor = UIColor.Clear;
 					ParentViewController.View.BackgroundColor = BackgroundColor;
@@ -792,28 +832,58 @@ namespace MonoMobile.MVVM
 			return new RefreshTableHeaderView(rect, defaultSettingsKey);
 		}
 		
-		private void HideSearch()
+		public void ToggleSearchbar()
 		{
-			if (AutoHideSearch && EnableSearch && TableView.ContentOffset.Y < TableView.TableHeaderView.Bounds.Height)
+			var searchbar = Root as ISearchBar;
+			if (searchbar != null)
 			{
-				TableView.ContentOffset = new PointF(0, TableView.TableHeaderView.Bounds.Height);
-			}	
+				if (!searchbar.IsSearchbarHidden)
+				{
+					FinishSearch(true);
 			
-			if (_Searchbar != null)
-			{
-				_Searchbar.ResignFirstResponder();
-				_Searchbar.Text = string.Empty;
+					_Searchbar.ResignFirstResponder();
+					_Searchbar.Text = string.Empty;
+					searchbar.IsSearchbarHidden = true;
+				}
+				else
+				{
+					StartSearch();
+					searchbar.IsSearchbarHidden = false;
+					_Searchbar.BecomeFirstResponder();
+				}
 			}
 		}
+		
+		private void CreateSearchbar()
+		{
+			if (_Searchbar == null)
+			{
+				var searchable = Root as ISearchBar;
+				if (searchable != null)
+				{
+					_Searchbar = new UISearchBar(new RectangleF(0, 0, TableView.Bounds.Width, 45)) 
+					{ 
+						Delegate = new SearchDelegate(this),
+						TintColor = Root.Theme.BarTintColor,
+					};	
 
+					if (!string.IsNullOrEmpty(searchable.SearchPlaceholder))
+						_Searchbar.Placeholder = searchable.SearchPlaceholder;
+				}
+			}
+
+			var frame = _Searchbar.Frame;
+			frame.Height = 45;
+			_Searchbar.Frame = frame;
+			_Searchbar.Hidden = false;
+		}
+		
 		public override void ViewWillAppear(bool animated)
 		{
 			base.ViewWillAppear(animated);
 			
 			if (Root == null)
 				return;
-
-			HideSearch();
 			
 			Root.Prepare();
 			
@@ -873,13 +943,16 @@ namespace MonoMobile.MVVM
 
 			if (Root != null)
 			{
-				var index = Root.ItemIndex;
+				var index = Root.Index;
 				if (index > -1)
 				{
 					var path = Root.PathForRadio();
-					TableView.ScrollToRow(path, UITableViewScrollPosition.Top, false);
+					if (path != null)
+						TableView.ScrollToRow(path, UITableViewScrollPosition.Top, false);
 				}
 			}
+
+			ConfigureBackgroundImage();
 		}
 
 		public virtual Source CreateSizingSource(bool unevenRows)
@@ -907,14 +980,17 @@ namespace MonoMobile.MVVM
 				UpdateSource();
 				TableView.ReloadData();
 			}
+
 			_Dirty = false;
 		}
 
 		public event EventHandler ViewDissapearing;
-
+		
 		public override void ViewWillDisappear(bool animated)
 		{
-			HideSearch();
+			var searchbar = Root as ISearchBar;
+			if (searchbar != null && searchbar.EnableSearch && !searchbar.IsSearchbarHidden)
+				FinishSearch(true);
 
 			base.ViewWillDisappear(animated);
 			if (ViewDissapearing != null)
@@ -931,22 +1007,20 @@ namespace MonoMobile.MVVM
 		protected DialogViewController(bool pushing) : base(UITableViewStyle.Grouped)
 		{
 			_Pushing = pushing;
-			IncrementalSearch = true;
 		}
 
 		protected DialogViewController(UITableViewStyle style, bool pushing) : base(style)
 		{
 			_Pushing = pushing;
 			Style = style;
-			IncrementalSearch = true;
 		}
 
 		public DialogViewController(UITableViewStyle style, BindingContext binding, bool pushing) : base(style)
 		{
 			if (binding == null)
 				throw new ArgumentNullException("binding");
+
 			_Pushing = pushing;
-			IncrementalSearch = true;
 			Style = style;
 			
 			PrepareRoot(binding.Root);
@@ -958,15 +1032,11 @@ namespace MonoMobile.MVVM
 
 		public DialogViewController(IRoot root) : base(UITableViewStyle.Grouped)
 		{
-			IncrementalSearch = true;
-
 			PrepareRoot(root);
 		}
 
 		public DialogViewController(UITableViewStyle style, IRoot root) : base(style)
 		{
-			IncrementalSearch = true;
-
 			PrepareRoot(root);
 		}
 
@@ -983,16 +1053,12 @@ namespace MonoMobile.MVVM
 		/// </param>
 		public DialogViewController(IRoot root, bool pushing) : base(UITableViewStyle.Grouped)
 		{
-			IncrementalSearch = true;
-
 			_Pushing = pushing;
 			PrepareRoot(root);
 		}
 
 		public DialogViewController(UITableViewStyle style, IRoot root, bool pushing) : base(style)
 		{
-			IncrementalSearch = true;
-
 			_Pushing = pushing;
 			Style = style;
 			PrepareRoot(root);
@@ -1001,31 +1067,92 @@ namespace MonoMobile.MVVM
 
 	public class CustomTableView : UITableView
 	{		
+		private UIColor oldTextShadowColor = UIColor.Clear;
+		private UIColor oldDetailTextShadowColor = UIColor.Clear;
+
 		public DialogViewController Controller { get; set; }
 		
 		public CustomTableView(RectangleF bounds, UITableViewStyle style) : base(bounds, style)
 		{
 		}
 
+		public override void TouchesBegan(NSSet touches, UIEvent evt)
+		{
+			ResetTextShadow(false, touches);
+		
+			base.TouchesBegan(touches, evt);
+		}
+		
+		public override void TouchesCancelled (NSSet touches, UIEvent evt)
+		{
+			base.TouchesCancelled (touches, evt);
+						
+			ResetTextShadow(true, touches);
+		}
+
 		public override void TouchesEnded(NSSet touches, UIEvent evt)
 		{
+			base.TouchesEnded(touches, evt);
+
 			if (Controller != null)
 			{
 				foreach (var section in Controller.Root.Sections) 
 				{
 					foreach(var element in section.Elements)
 					{
-						var selected = element as EntryElement;
-						if (selected != null && selected.Entry != null && selected.Entry.IsFirstResponder) 
+						var selected = element as IFocusable;
+						if (selected != null && selected.InputControl != null && selected.InputControl.IsFirstResponder) 
 						{
-							selected.Entry.ResignFirstResponder();
+							selected.InputControl.ResignFirstResponder();
 							break;
 						}
 					}
 				}	
 			}
 
-			base.TouchesEnded(touches, evt);
+			ResetTextShadow(true, touches);
+		}
+
+		private void ResetTextShadow(bool visible, NSSet touches)
+		{
+			var touch = touches.AnyObject as UITouch;
+			var view = touch.View;
+
+			if (view != null)
+			{
+				var cell = view.Superview as UITableViewElementCell;
+	
+				if (cell != null && cell.SelectionStyle != UITableViewCellSelectionStyle.None)
+				{
+					var textLabel = view.Subviews.FirstOrDefault() as UILabel;
+					if (textLabel != null)
+					{
+						if (visible && oldTextShadowColor != null)
+						{
+							textLabel.ShadowColor = oldTextShadowColor;
+						}
+						else
+						{
+							oldTextShadowColor = textLabel.ShadowColor;
+							textLabel.ShadowColor = UIColor.Clear;
+						}
+					}
+		
+					var detailTextLabel = view.Subviews.LastOrDefault() as UILabel;					
+					if (detailTextLabel != null)
+					{
+						if (visible && oldDetailTextShadowColor != null)
+						{
+							detailTextLabel.ShadowColor = oldDetailTextShadowColor;
+						}
+						else
+						{
+							oldDetailTextShadowColor = detailTextLabel.ShadowColor;
+							detailTextLabel.ShadowColor = UIColor.Clear;
+						}
+					}
+				}
+			}
 		}
 	}
 }

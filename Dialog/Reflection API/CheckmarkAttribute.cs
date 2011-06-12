@@ -1,10 +1,10 @@
 //
-// EnableSearchAttribute.cs
+// CheckboxAttribute.cs
 //
 // Author:
-//   Robert Kozak (rkozak@nowcom.com)
+//   Miguel de Icaza (miguel@gnome.org)
 //
-// Copyright 2011, Nowcom Corporation
+// Copyright 2010, Novell, Inc.
 //
 // Code licensed under the MIT X11 license
 //
@@ -31,16 +31,8 @@ namespace MonoMobile.MVVM
 {
 	using System;
 
-	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = false)]
-	public class EnableSearchAttribute : Attribute
+	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false)]
+	public class CheckmarkAttribute : Attribute
 	{
-		public EnableSearchAttribute(bool autoHide)
-		{
-			AutoHide = autoHide;
-		}
-
-		public bool AutoHide { get; set; }
-		public string Placeholder { get; set; }
-		public bool IncrementalSearch { get; set; }
 	}
 }

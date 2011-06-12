@@ -43,14 +43,15 @@ namespace MonoMobile.MVVM
 
 	public class BindingContext : DisposableObject
 	{
-		private class NoElement : Element
+		private static Dictionary<DataContextCode, Func<IRoot, IRoot>> RootBuilder = new Dictionary<DataContextCode, Func<IRoot, IRoot>>()
 		{
-			public NoElement(): base(null) { }
-		}
-
-		private readonly NoElement _NoElement = new NoElement();
-
-		private Dictionary<Type, Func<MemberInfo, string, object, List<Binding>, IElement>> _ElementPropertyMap;
+			{ DataContextCode.Enum, (root) => { return null; } },
+			{ DataContextCode.EnumCollection, (root) => { return null; } },
+			{ DataContextCode.MultiselectCollection, (root) => { return null; } },
+			{ DataContextCode.Enumerable, (root) => { return null; } },
+			{ DataContextCode.Object, (root) => { return CreateObjectRoot(root); } },
+			{ DataContextCode.ViewEnumerable, (root) => { return CreateViewEnumerableRoot(root); } }
+		};
 
 		public IRoot Root { get; set; }
 	
@@ -81,6 +82,11 @@ namespace MonoMobile.MVVM
 					}
 				}
 			}
+
+			if (view is IView)
+			{
+				((IView)view).TableView = Root.TableView;
+			}
 		}
 		
 		public static IRoot CreateRootedView(IRoot root)
@@ -89,92 +95,12 @@ namespace MonoMobile.MVVM
 
 			if (root.ViewBinding != null)
 			{
-				switch (root.ViewBinding.DataContextCode)
-				{
-					case DataContextCode.Object:	
-					{
-						UIView view = root.ViewBinding.CurrentView;
-						
-						if (view == null)
-						{
-							if (root.ViewBinding.DataContext != null && root.ViewBinding.DataContext is UIView)
-							{
-								view = root.ViewBinding.DataContext as UIView;
-							}
-							else if (root.ViewBinding.ViewType != null)
-							{
-								view = Activator.CreateInstance(root.ViewBinding.ViewType) as UIView;
-					
-								var dataContext = view as IDataContext;
-								if (dataContext != null)
-								{
-									if (dataContext.DataContext == null)
-										dataContext.DataContext = root.ViewBinding.DataContext;
-									
-									var lifetime = dataContext.DataContext as ISupportInitialize;
-									if (lifetime != null)
-										lifetime.BeginInit();
-									
-									lifetime = dataContext as ISupportInitialize;
-									if (lifetime != null)
-										lifetime.BeginInit();
-								}
-							}
-						}
-						
-						var bindingContext = new BindingContext(view, root.Caption, root.Theme);
-
-						newRoot = (IRoot)bindingContext.Root;
-						newRoot.ViewBinding = root.ViewBinding;
-						break;
-					}
-					case DataContextCode.Enum:
-						break;
-					case DataContextCode.EnumCollection:
-						break;
-					case DataContextCode.MultiselectCollection:
-						break;
-					case DataContextCode.Enumerable:
-						break;
-					case DataContextCode.ViewEnumerable:
-					{
-						newRoot = new RootElement() { Opaque = false };
-						IElement element = null;
-						
-						var items = (IEnumerable)root.ViewBinding.DataContext;
-						var section = new Section() { Opaque = false, ViewBinding = root.ViewBinding, Parent = newRoot as IElement };
-
-						newRoot.Sections.Add(section);
-
-						foreach (var e in items)
-						{
-							var caption = e.ToString();
-							if (string.IsNullOrEmpty(caption))
-							{
-								caption = MakeCaption(root.ViewBinding.ViewType.Name);
-							}
-
-							element = new RootElement(caption) { Opaque = false };
-							element.ViewBinding.DataContextCode = DataContextCode.Object;
-							element.ViewBinding.ViewType = root.ViewBinding.ViewType;
-							element.ViewBinding.MemberInfo = root.ViewBinding.MemberInfo;
-							element.ViewBinding.DataContext = null;
-
-							if (element.ViewBinding.ViewType == null)
-								element.ViewBinding.ViewType = e.GetType();
-
-							section.Add(element);
-						}
-					
-						ThemeHelper.ApplyElementTheme(root.Theme, newRoot, null);
-						break;
-					}
-				}
+				newRoot = RootBuilder[root.ViewBinding.DataContextCode](root);
 			}
 
 			return newRoot;
 		}
-
+		
 		public static string MakeCaption(string name)
 		{
 			var sb = new StringBuilder(name.Length);
@@ -187,7 +113,8 @@ namespace MonoMobile.MVVM
 					sb.Append(Char.ToUpper(c));
 					nextUp = false;
 
-				} else
+				} 
+				else
 				{
 					if (c == '_')
 					{
@@ -199,6 +126,7 @@ namespace MonoMobile.MVVM
 					sb.Append(c);
 				}
 			}
+
 			return sb.ToString();
 		}
 
@@ -216,7 +144,94 @@ namespace MonoMobile.MVVM
 				}
 			}
 		}
+		
+		private static IRoot CreateViewEnumerableRoot(IRoot root)
+		{
+			IRoot newRoot = null;
 
+			Type elementType = root.ViewBinding.ElementType;
+			if (elementType == null)
+				elementType = typeof(RootElement);
+
+			newRoot = new RootElement() { Opaque = false, ViewBinding = root.ViewBinding };
+			IElement element = null;
+			
+			var items = (IEnumerable)root.DataContext;
+			var section = new Section() { Opaque = false, ViewBinding = root.ViewBinding, Parent = newRoot as IElement };
+
+			newRoot.Sections.Add(section);
+
+			foreach (var e in items)
+			{
+				var caption = e.ToString();
+				if (string.IsNullOrEmpty(caption))
+				{
+					caption = root.ViewBinding.ViewType.Name.Capitalize();
+				}
+				
+				element = Activator.CreateInstance(elementType) as IElement;
+				((RootElement)element).Opaque = false;
+				element.Caption = caption;
+				element.ViewBinding.DataContextCode = DataContextCode.Object;
+				element.ViewBinding.ViewType = root.ViewBinding.ViewType;
+				element.ViewBinding.MemberInfo = root.ViewBinding.MemberInfo;
+
+				if (e is UIView)
+					element.ViewBinding.View = e as UIView;
+				else
+					element.DataContext = e;
+
+				if (element.ViewBinding.ViewType == null)
+					element.ViewBinding.ViewType = e.GetType();
+
+				section.Add(element);
+			}
+		
+			ThemeHelper.ApplyElementTheme(root.Theme, newRoot, null);
+
+			return newRoot;
+		}
+		
+		private static IRoot CreateObjectRoot(IRoot root)
+		{
+			IRoot newRoot = null;
+			UIView view = null;
+			object context = root.DataContext;
+
+			try
+			{				
+				if (root.ViewBinding.ViewType != null)
+				{
+					view = Activator.CreateInstance(root.ViewBinding.ViewType) as UIView;
+				}
+
+				var dataContext = view as IDataContext;
+				if (dataContext != null)
+				{
+					dataContext.DataContext = context;
+
+					var lifetime = context as ISupportInitialize;
+					if (lifetime != null)
+						lifetime.BeginInit();
+					
+					lifetime = dataContext as ISupportInitialize;
+					if (lifetime != null)
+						lifetime.BeginInit();
+				}
+				
+				var bindingContext = new BindingContext(view, root.Caption, root.Theme);
+
+				newRoot = (IRoot)bindingContext.Root;
+				newRoot.ViewBinding = root.ViewBinding;
+				newRoot.ViewBinding.View = view;
+			}
+			catch(MissingMethodException)
+			{
+			}
+			
+			return newRoot;
+		}
+ 
 		protected override void Dispose(bool disposing)
 		{
 			if (disposing)

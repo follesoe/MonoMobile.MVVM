@@ -3,7 +3,6 @@ namespace Samples
 	using MonoMobile.MVVM;
 	using MonoTouch.UIKit;
 	
-//	[Theme(typeof(FrostedTheme))]
 	public class MovieView: View
 	{
 		[Section()]
@@ -48,7 +47,8 @@ namespace Samples
 			get;// { return Get(()=>DataContext.ShownIn3D); }
 			set;// { Set(()=>DataContext.ShownIn3D, value); }
 		}
-
+		
+		public AddressView AddressView { get; set; }
 		
 //		public EnumCollection<Location> Location 
 //		{
@@ -79,14 +79,6 @@ namespace Samples
 			else
 				color = UIColor.Red;
 		}
-		
-public AddressView AddressView {get; set;}
-
-public MovieView()
-{
-		
-			AddressView = new AddressView();
-}
 
 		public override string ToString()
 		{
@@ -94,4 +86,3 @@ public MovieView()
 		}
 	}
 }
-

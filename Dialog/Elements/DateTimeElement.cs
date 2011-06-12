@@ -30,15 +30,15 @@
 namespace MonoMobile.MVVM
 {
 	using System;
+	using System.Collections.Generic;
 	using System.Drawing;
-	using MonoTouch.Foundation;
+	using System.Linq;
 	using MonoMobile.MVVM;
+	using MonoTouch.Foundation;
 	using MonoTouch.UIKit;
 
-	public partial class DateTimeElement : Element, ISelectable
+	public partial class DateTimeElement : FocusableElement, ISelectable
 	{
-		public DateTime Value { get; set; }  
-
 		public UIDatePicker DatePicker;
 		protected NSDateFormatter fmt = new NSDateFormatter { DateStyle = NSDateFormatterStyle.Short };
 
@@ -47,9 +47,9 @@ namespace MonoMobile.MVVM
 		}
 		public DateTimeElement(string caption, DateTime date) : base(caption)
 		{
-			Value = date;
+			DataContext = date;
 		}
-
+		
 		public override UITableViewElementCell NewCell()
 		{
 			return new UITableViewElementCell(UITableViewCellStyle.Value1, Id, this);
@@ -61,8 +61,6 @@ namespace MonoMobile.MVVM
 
 			Cell.Accessory = UITableViewCellAccessory.None;
 			Cell.TextLabel.Text = Caption;
-			
-			DetailTextLabel.Text = FormatDate(Value);
 		}
 
 		protected override void Dispose(bool disposing)
@@ -84,89 +82,44 @@ namespace MonoMobile.MVVM
 		{
 			return fmt.ToString(dt) + " " + dt.ToLocalTime().ToShortTimeString();
 		}
+		
+		public override void InitializeContent()
+		{ 
+			base.InitializeContent();
+
+			DatePicker = CreatePicker();
+			var view = new UIView(DatePicker.Bounds) { BackgroundColor = UIColor.Black };
+			view.AddSubview(DatePicker);
+		
+			Control = DatePicker;
+
+			InputControl.InputView = view;
+			InputControl.InputAccessoryView = new UIDatePickerToolbar(this) { };
+
+
+			InputControl.Ended += (s, e) => 
+			{
+				DataContextProperty.Update();
+			};
+		}
 
 		public virtual UIDatePicker CreatePicker()
 		{
-			var picker = new UIDatePicker(RectangleF.Empty) { AutoresizingMask = UIViewAutoresizing.FlexibleWidth, Mode = UIDatePickerMode.Date, Date = (DateTime)Value };
+			var bounds = UIScreen.MainScreen.Bounds;
+
+			var picker = new UIDatePicker(new RectangleF(0, 0, bounds.Width, UIDevice.CurrentDevice.GetKeyboardHeight())) 
+			{ 
+				AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight, 
+				Mode = UIDatePickerMode.Date 
+			};
+			
 			return picker;
 		}
 
-		private static RectangleF PickerFrameWithSize(SizeF size)
-		{
-			var screenRect = UIScreen.MainScreen.ApplicationFrame;
-			float fY = 0, fX = 0;
-			
-			switch (UIApplication.SharedApplication.StatusBarOrientation)
-			{
-				case UIInterfaceOrientation.LandscapeLeft:
-				case UIInterfaceOrientation.LandscapeRight:
-					fX = (screenRect.Height - size.Width) / 2;
-					fY = (screenRect.Width - size.Height) / 2 - 17;
-					break;
-				
-				case UIInterfaceOrientation.Portrait:
-				case UIInterfaceOrientation.PortraitUpsideDown:
-					fX = (screenRect.Width - size.Width) / 2;
-					fY = (screenRect.Height - size.Height) / 2 - 25;
-					break;
-			}
-			
-			return new RectangleF(fX, fY, size.Width, size.Height);
-		}
-		
-		public void Selected(DialogViewController dvc, UITableView tableView, NSIndexPath path)
-		{
-			var vc = new DateTimeController(this) { Autorotate = dvc.Autorotate };
-			DatePicker = CreatePicker();
-			DatePicker.Frame = PickerFrameWithSize(DatePicker.SizeThatFits(SizeF.Empty));
-			vc.View.BackgroundColor = tableView.BackgroundColor;
-			vc.View.AddSubview(DatePicker);
-		
-			//dvc.PresentModalViewController(vc, true);
-			dvc.ActivateController(vc, dvc);
-		}
-
-		protected virtual void OnValueChanged()
-		{
-			if (DatePicker != null)
-				DatePicker.Date = Value;
-			
+		protected override void OnDataContextChanged()
+		{			
 			if (DetailTextLabel != null)
-				DetailTextLabel.Text = FormatDate(Value);
-		}
-
-		private class DatePickerToolBar: UIView
-		{
-
-		}
-		
-		private class DateTimeController : UIViewController
-		{
-			private DateTimeElement container;
-			
-			public bool Autorotate { get; set; }
-
-			public DateTimeController(DateTimeElement container)
-			{
-				this.container = container;
-			}
-
-			public override void ViewWillDisappear(bool animated)
-			{
-				base.ViewWillDisappear(animated);
-				container.Value = container.DatePicker.Date;
-			}
-
-			public override void DidRotate(UIInterfaceOrientation fromInterfaceOrientation)
-			{
-				base.DidRotate(fromInterfaceOrientation);
-				container.DatePicker.Frame = PickerFrameWithSize(container.DatePicker.SizeThatFits(SizeF.Empty));
-			}
-
-			public override bool ShouldAutorotateToInterfaceOrientation(UIInterfaceOrientation toInterfaceOrientation)
-			{
-				return Autorotate;
-			}
+				DetailTextLabel.Text = FormatDate((DateTime)DataContext);
 		}
 	}
 }

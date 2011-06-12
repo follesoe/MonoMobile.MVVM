@@ -1,16 +1,13 @@
 namespace Samples
 {
-	using MonoTouch.Foundation;
-	using MonoTouch.UIKit;
+	using MonoMobile.MVVM;
 	
-	public class Application
+	public class Application : MonoMobileApplication
 	{
-		public static UIWindow Window { get; set; }
-		public static UINavigationController Navigation { get; set; }
-
-		static void Main(string[] args)
+		public new static void Main(string[] args)
 		{
-			UIApplication.Main(args, null, "AppDelegate");
+			Run("Sample", typeof(MovieListView), args);
+		//	Run("AppDelegate", args);
 		}	
 	}
 }

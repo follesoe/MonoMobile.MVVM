@@ -89,6 +89,12 @@ namespace Samples
 			get { return Get(() => Location); }
 			set { Set(() => Location, value); }
 		}
+		
+		public AddressView AddressView 
+		{
+			get { return Get(() => AddressView); }
+			set { Set(() => AddressView, value); }
+		}
 
 		public override string ToString()
 		{
@@ -103,9 +109,12 @@ namespace Samples
 
 		public override void EndInit()
 		{
-
 		}
-
-}
+		
+		public MovieViewModel()
+		{
+			AddressView = new AddressView();
+		}
+	}
 }
 

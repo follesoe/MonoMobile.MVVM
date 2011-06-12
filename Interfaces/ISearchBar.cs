@@ -33,8 +33,8 @@ namespace MonoMobile.MVVM
 
 	public interface ISearchBar
 	{
+		bool IsSearchbarHidden { get; set; }
 		bool EnableSearch { get; set; }
-		bool AutoHideSearch { get; set; }
 		bool IncrementalSearch { get; set; }
 		string SearchPlaceholder { get; set; }
 		SearchCommand SearchCommand { get; set; }

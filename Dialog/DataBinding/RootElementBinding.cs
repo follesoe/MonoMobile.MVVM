@@ -32,28 +32,13 @@ namespace MonoMobile.MVVM
 	using System;
 
 	public partial class RootElement
-	{
-		public BindableProperty ItemIndexProperty = BindableProperty.Register("ItemIndex");
-		
-		private int _Index
-		{
-			get { return ItemIndex; }
-			set
-			{
-				if (ItemIndex != value)
-				{
-					ItemIndex = value;
-				}
-			}
-		}
-
+	{		
 		public override void BindProperties()
 		{
-#if DATABINDING
 			base.BindProperties();
 			
-			ItemIndexProperty.BindTo(this, () => _Index);
-#endif
+			if (DetailTextLabel != null)
+				DataContextProperty.BindTo(this, DetailTextLabel, "Text");
 		}
 	}
 }

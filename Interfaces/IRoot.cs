@@ -31,17 +31,20 @@ namespace MonoMobile.MVVM
 {
 	using System;
 	using System.Collections.Generic;
+	using System.Collections.ObjectModel;
 	using MonoTouch.UIKit;
 	using MonoTouch.Foundation;
 	using MonoMobile.MVVM;
 
 	public interface IRoot: IThemeable, IDisposable
 	{	
-		string Value { get; set; }
+		object DataContext { get; set; }
+
 		ICommand PullToRefreshCommand { get; set; }
 		string DefaultSettingsKey { get; set; }
 
 		ViewBinding ViewBinding { get; set; }
+
 		DialogViewController Controller { get; set; }
 		
 		List<CommandBarButtonItem> ToolbarButtons { get; set; }
@@ -50,10 +53,10 @@ namespace MonoMobile.MVVM
 		List<ISection> Sections { get; set; }
 		bool UnevenRows { get; set;}
 		string Caption { get; set; }
-		List<Group> Groups { get; set; }
+
 		UITableView TableView { get; set; }
 		int Count { get; }
-		int ItemIndex { get; set; }
+		int Index { get; set; }
 		NSIndexPath PathForRadio();
 
 		void Prepare();

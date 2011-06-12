@@ -1,5 +1,5 @@
 //
-// ClearStyle.cs:
+// ClearTheme.cs:
 //
 // Author:
 //   Robert Kozak (rkozak@gmail.com) Twitter:@robertkozak
@@ -29,14 +29,25 @@
 //
 namespace MonoMobile.MVVM
 {
+	using System.Drawing;
+	using MonoTouch.CoreGraphics;
+	using MonoTouch.Foundation;
 	using MonoTouch.UIKit;
-
+	
+	[Preserve(AllMembers = true)]
 	public class ClearTheme: Theme
 	{		
 		public ClearTheme()
 		{
 			CellBackgroundColor = UIColor.Clear;
+			DrawContentViewAction = (rect, context, cell) => { DrawContentView(rect, context, cell); };
 			TextColor = UIColor.DarkTextColor;
+		}
+
+		public void DrawContentView(RectangleF rect, CGContext context, UITableViewElementCell cell)
+		{
+			CellBackgroundColor.SetFill();
+			context.FillRect(rect);
 		}
 	}
 }

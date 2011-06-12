@@ -1,6 +1,5 @@
-using MonoMobile.MVVM;
 //
-// GlassButtonStyle.cs:
+// GlassButtonTheme.cs:
 //
 // Author:
 //   Robert Kozak (rkozak@gmail.com) Twitter:@robertkozak
@@ -43,7 +42,6 @@ namespace MonoMobile.MVVM
 			//CellBackgroundColor = UIColor.FromRGB(88, 170, 34);
 			CellBackgroundColor = UIColor.FromWhiteAlpha(1f, 0.6f);
 			HighlightColor = UIColor.FromRGB(5, 115, 245);
-			DrawWhenHighlighted = true;
 
 			TextColor = UIColor.White;
 			TextShadowColor = UIColor.DarkGray;

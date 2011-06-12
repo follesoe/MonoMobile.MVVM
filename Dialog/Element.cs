@@ -35,17 +35,43 @@ namespace MonoMobile.MVVM
 	using MonoTouch.Foundation;
 	using MonoMobile.MVVM;
 	using MonoTouch.UIKit;
-
+	
+	[Preserve(AllMembers = true)]
 	public abstract partial class Element : UIView, IElement, IImageUpdated, IThemeable, IBindable
 	{		
+		protected object _DataContext;
+		public object DataContext 
+		{ 
+			get 
+			{
+				return _DataContext;
+			} 
+			set 
+			{ 
+				SetDataContext(value);
+			}
+		}
+
 		private bool _Visible;
 		private int _OldRow;
 		private DisabledCellView _DisabledCellView; 
+		
+		public Element ElementInstance { get { return this; } }
 
 		public NSString Id { get; set; }
 		public int Order { get; set; }
 		public int Index { get; set; }
 		
+		protected virtual void SetDataContext(object value)
+		{
+			if (_DataContext != value)
+			{
+				_DataContext = value;
+			
+				OnDataContextChanged();
+			}
+		}
+
 		/// <summary>
 		///  Returns the IndexPath of a given element.   This is only valid for leaf elements,
 		///  it does not work for a toplevel IRoot or a Section of if the Element has
@@ -79,18 +105,6 @@ namespace MonoMobile.MVVM
 			}
 		}
 		
-		public ISection Section { get { return Parent as ISection; } }
-		public IRoot Root 
-		{ 
-			get
-			{ 
-				if (Section == null)
-					return null;
-
-				return Section.Parent as IRoot; 
-			} 
-		}
-
 		public UITableViewElementCell Cell { get; set; }
 
 		private Theme _CellStyleInfo;
@@ -241,6 +255,8 @@ namespace MonoMobile.MVVM
 					TextLabel.ShadowColor = TextShadowColor;
 				if (TextShadowOffset != SizeF.Empty)
 					TextLabel.ShadowOffset = TextShadowOffset;
+				if (Theme.TextHighlightColor != null)
+					TextLabel.HighlightedTextColor = Theme.TextHighlightColor;
 			}
 			
 			if (DetailTextLabel != null)
@@ -255,6 +271,8 @@ namespace MonoMobile.MVVM
 					DetailTextLabel.ShadowColor = DetailTextShadowColor;
 				if (DetailTextShadowOffset != SizeF.Empty)
 					DetailTextLabel.ShadowOffset = DetailTextShadowOffset;
+				if (Theme.DetailTextHighlightColor != null)
+					DetailTextLabel.HighlightedTextColor = Theme.DetailTextHighlightColor;
 			}
 			
 			if (_CellStyleInfo != null && Cell != null)
@@ -313,6 +331,19 @@ namespace MonoMobile.MVVM
 		/// for the root IRoot.
 		/// </remarks>
 		public IElement Parent { get; set; }
+		public IContainer Container { get { return Parent as IContainer; } }
+		public ISection Section { get { return Parent as ISection; } }
+		public IRoot Root
+		{
+			get
+			{
+				if (Section == null)
+					return null;
+				
+				return Section.Parent as IRoot;
+			}
+		}
+
 		public string Caption { get; set; }
 		public bool ShowCaption { get; set; }
 		
@@ -369,6 +400,14 @@ namespace MonoMobile.MVVM
 				viewToRemove.RemoveFromSuperview();
 			}
 		}
+		
+		public virtual void BeginInit()
+		{
+		}
+
+		public virtual void EndInit()
+		{
+		}
 
 		public virtual UITableViewElementCell GetCell(UITableView tableView)
 		{
@@ -382,20 +421,23 @@ namespace MonoMobile.MVVM
 			}
 			else
 				Cell.Element = this;
-
+			
 			TextLabel = Cell.TextLabel;
 			DetailTextLabel = Cell.DetailTextLabel;
-		
+
+			if (DetailTextLabel != null)
+				DetailTextLabel.Text = string.Empty;
+
 			InitializeTheme();
-
+			
 			InitializeCell(tableView);
-		
-			Theme.Cell = Cell;		
-	
+			
+			Theme.Cell = Cell;
+			
 			BindProperties();
-
 			UpdateTargets();
-
+			UpdateSources();
+			
 			if (!Enabled) 
 				SetDisabled(Cell);
 			
@@ -424,12 +466,15 @@ namespace MonoMobile.MVVM
 			Cell.SelectionStyle = selectable != null ? UITableViewCellSelectionStyle.Blue : UITableViewCellSelectionStyle.None;			
 
 			ThemeChanged();
-
+			
 			CreateContentView();
 		}
 
 		protected virtual void CreateContentView()
 		{
+			if (ContentView != null)
+				ContentView.RemoveFromSuperview();
+
 			InitializeContent();
 
 			if (Cell != null)
@@ -517,6 +562,10 @@ namespace MonoMobile.MVVM
 				cell.SetNeedsDisplay();
 			}
 		}
+		
+		protected virtual void OnDataContextChanged()
+		{
+		}
 
 		void IImageUpdated.UpdatedImage(Uri uri)
 		{
@@ -528,5 +577,7 @@ namespace MonoMobile.MVVM
 			
 			Root.TableView.ReloadRows(new NSIndexPath[] { IndexPath }, UITableViewRowAnimation.None);
 		}
+
+		
 	}
 }

@@ -1,5 +1,5 @@
 // 
-//  {filename}.cs
+//  SectionBinding.cs
 // 
 //  Author:
 //    Robert Kozak (rkozak@gmail.com / Twitter:@robertkozak)
@@ -35,7 +35,9 @@ namespace MonoMobile.MVVM
 	{
 		public override void BindProperties()
 		{
-			CaptionProperty.BindTo(this, () => HeaderText );
+			base.BindProperties();
+
+			CaptionProperty.BindTo(this, this, "HeaderText");
 		}
 	}
 }

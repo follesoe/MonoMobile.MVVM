@@ -1,5 +1,5 @@
 //
-// FrostedStyle.cs:
+// FrostedTheme.cs:
 //
 // Author:
 //   Robert Kozak (rkozak@gmail.com) Twitter:@robertkozak
@@ -35,7 +35,7 @@ namespace MonoMobile.MVVM
 	using MonoTouch.CoreGraphics;
 	using MonoTouch.Foundation;
 	
-	[Preserve(AllMembers=true)]
+	[Preserve(AllMembers = true)]
 	public class FrostedTheme: Theme
 	{		
 		public FrostedTheme()
@@ -45,6 +45,9 @@ namespace MonoMobile.MVVM
 			CellBackgroundColor = UIColor.Clear;
 
 			TextColor = UIColor.DarkTextColor;
+			TextShadowColor = UIColor.FromWhiteAlpha(0.8f, 1.0f);
+			TextShadowOffset = new SizeF(0,1);
+
 			SeparatorColor = UIColor.FromWhiteAlpha(0.4f, 1.0f);
 			SeparatorStyle = UITableViewCellSeparatorStyle.None;
 			PlaceholderColor = UIColor.FromWhiteAlpha(0.4f, 1.0f);

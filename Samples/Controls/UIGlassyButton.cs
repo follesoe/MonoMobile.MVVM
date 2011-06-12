@@ -27,7 +27,7 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-namespace MonoMobile.MVVM.Controls
+namespace Samples.Controls
 {
 	using System;
 	using System.Drawing;
@@ -139,7 +139,7 @@ namespace MonoMobile.MVVM.Controls
 		{
 			if (uievent.Type == UIEventType.Touches)
 			{
-				_Timer = NSTimer.CreateScheduledTimer(TimeSpan.FromMilliseconds(500), ButtonTimer);
+				_Timer = NSTimer.CreateScheduledTimer(TimeSpan.FromMilliseconds(400), ButtonTimer);
 				SetNeedsDisplay();
 			}
 

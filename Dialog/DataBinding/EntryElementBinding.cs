@@ -27,50 +27,47 @@
 // OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 // WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
-#define DATABINDING
 namespace MonoMobile.MVVM
 {
 	using MonoMobile.MVVM;
 	using MonoTouch.Foundation;
 	using MonoTouch.UIKit;
 
-	public partial class EntryElement : StringElement, IFocusable, ISearchable, ISelectable
+	public partial class EntryElement : FocusableElement, IFocusable, ISearchable, ISelectable
 	{
-		private string __Text { get {return Entry.Text; } set { Entry.Text = value; } }
-#if DATABINDING
-		private string __Placeholder { get {return Entry.Placeholder; } set { Entry.Placeholder = value; } }
-		private bool __SecureTextEntry { get {return Entry.SecureTextEntry; } set { Entry.SecureTextEntry = value; } }
-		private UIReturnKeyType __ReturnKeyboardType { get { return Entry.ReturnKeyType; } set { Entry.ReturnKeyType = value; } }
-		private UIKeyboardType __KeyboardType { get { return Entry.KeyboardType; } set { Entry.KeyboardType = value; } }
-		private UIFont __Font { get { return Entry.Font; } set { Entry.Font = value; } }
-		
+		private string __Text { get {return InputControl.Text; } set { InputControl.Text = value; } }
+
+		private string __Placeholder { get {return InputControl.Placeholder; } set { InputControl.Placeholder = value; } }
+		private bool __SecureTextEntry { get {return InputControl.SecureTextEntry; } set { InputControl.SecureTextEntry = value; } }
+		private UIReturnKeyType __ReturnKeyboardType { get { return InputControl.ReturnKeyType; } set { InputControl.ReturnKeyType = value; } }
+		private UIKeyboardType __KeyboardType { get { return InputControl.KeyboardType; } set { InputControl.KeyboardType = value; } }
+		private UIFont __Font { get { return InputControl.Font; } set { InputControl.Font = value; } }
+		private UITextAlignment __TextAlignment { get { return InputControl.TextAlignment; } set { InputControl.TextAlignment = value; } }
+
 		public BindableProperty PlaceholderProperty = BindableProperty.Register("Placeholder");
 		public BindableProperty IsPasswordProperty = BindableProperty.Register("IsPassword");
 		public BindableProperty TextProperty = BindableProperty.Register("Text");
 		public BindableProperty ReturnKeyTypeProperty = BindableProperty.Register("ReturnKeyType");
 		public BindableProperty KeyboardTypeProperty = BindableProperty.Register("KeyboardType");
 		public BindableProperty EditModeProperty = BindableProperty.Register("EditMode");
-#endif
+
 		public override void BindProperties()
 		{
-#if DATABINDING
 			base.BindProperties();
 			
-			EditModeProperty.BindTo(this, () => EditMode);
-#endif			
-			if (Entry != null)
+			EditModeProperty.BindTo(this, this, "EditMode");
+		
+			if (InputControl != null)
 			{
-				ValueProperty.BindTo(this, () => Entry.Text);
+				DataContextProperty.BindTo(this, InputControl, "Text");
 
-#if DATABINDING
-				PlaceholderProperty.BindTo(this, () => Entry.Placeholder);
-				IsPasswordProperty.BindTo(this, () => Entry.SecureTextEntry);
-				TextProperty.BindTo(this, () => Entry.Text);
-				DetailTextAlignmentProperty.BindTo(this, () => Entry.TextAlignment);
-				ReturnKeyTypeProperty.BindTo(this, () => Entry.ReturnKeyType);
-				KeyboardTypeProperty.BindTo(this, () => Entry.KeyboardType);
-				DetailTextFontProperty.BindTo(this, () => Entry.Font);
-#endif
+				PlaceholderProperty.BindTo(this,  InputControl, "Placeholder");
+				IsPasswordProperty.BindTo(this, InputControl, "SecureTextEntry");
+				TextProperty.BindTo(this, InputControl, "Text");
+				DetailTextAlignmentProperty.BindTo(this, InputControl, "TextAlignment");
+				ReturnKeyTypeProperty.BindTo(this, InputControl,"ReturnKeyType");
+				KeyboardTypeProperty.BindTo(this, InputControl, "KeyboardType");
+				DetailTextFontProperty.BindTo(this, InputControl, "Font");
 			}
 		}
 	}

@@ -33,19 +33,19 @@ namespace MonoMobile.MVVM
 	using System.Globalization;
 	using MonoMobile.MVVM;
 
-	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false, AllowMultiple = true)]
+	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field | AttributeTargets.Method, Inherited = false, AllowMultiple = true)]
 	public class BindAttribute : Attribute
 	{
 		internal Binding Binding;
 
 		public BindAttribute()
 		{
-			Binding = new Binding(null, "Value");
+			Binding = new Binding(null, "DataContext");
 		}
 
 		public BindAttribute(string sourcePath)
 		{
-			Binding = new Binding(sourcePath, "Value");
+			Binding = new Binding(sourcePath, "DataContext");
 		}
 
 		public BindAttribute(string sourcePath, string targetPath)
@@ -53,16 +53,16 @@ namespace MonoMobile.MVVM
 			Binding = new Binding(sourcePath, targetPath);
 		}
 
-		public string TargetPath
-		{
-			get { return Binding.TargetPath; }
-			set { Binding.TargetPath = value; }
-		}
-
 		public string SourcePath
 		{
 			get { return Binding.SourcePath; }
 			set { Binding.SourcePath = value; }
+		}
+		
+		public string TargetPath
+		{
+			get { return Binding.TargetPath; }
+			set { Binding.TargetPath = value; }
 		}
 
 		public BindingMode BindingMode

@@ -31,12 +31,15 @@ namespace MonoMobile.MVVM
 {
 	using System;
 	using System.Collections.Generic;
+	using System.ComponentModel;
 	using MonoTouch.Foundation;
 	using MonoMobile.MVVM;
 	using MonoTouch.UIKit;
 
-	public interface IElement : IThemeable, IDisposable
+	public interface IElement : IThemeable, IDisposable, ISupportInitialize
 	{
+		object DataContext { get; set; }
+
 		int Order { get; set; }
 		NSIndexPath IndexPath { get; }
 		IElement Parent { get; set; }

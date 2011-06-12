@@ -6,10 +6,10 @@ using MonoTouch.Foundation;
 
 namespace Samples
 {
-	[Preserve(AllMembers=true)]
+	[Preserve(AllMembers = true)]
 	public class ThemeSampleView: View
 	{
-		[Bind("Themes", "ItemIndex")]
+		[Bind("Themes", "Index")]
 		public int Selected { get; set; }
 
 		[Bind("Themes", "Theme")]

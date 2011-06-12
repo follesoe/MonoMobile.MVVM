@@ -32,6 +32,7 @@ namespace MonoMobile.MVVM
 	using System;
 	using System.Collections;
 	using System.Collections.Generic;
+	using System.Collections.ObjectModel;
 	using System.ComponentModel;
 	using System.Linq;
 	using MonoMobile.MVVM;
@@ -63,17 +64,17 @@ namespace MonoMobile.MVVM
 	///    Sections are added by calling the Add method which supports the
 	///    C# 4.0 syntax to initialize a RootElement in one pass.
 	/// </remarks>
-	public partial class RootElement : StringElement, IEnumerable, IRoot, ISelectable, ISearchable, ISearchBar
+	public partial class RootElement : ContainerElement, IEnumerable, IRoot, ISelectable, ISearchable, ISearchBar
 	{		
+		public bool IsSearchbarHidden { get; set; }
 		public bool EnableSearch { get; set; }
-		public bool AutoHideSearch { get; set; }
 		public bool IncrementalSearch { get; set; }
 		public string SearchPlaceholder { get; set; }
 		public SearchCommand SearchCommand { get; set; }
 		
 		public ICommand PullToRefreshCommand { get; set; }
 		public string DefaultSettingsKey { get; set; }
-
+ 
 		public DialogViewController Controller {get; set;}
 		
 		//public string NavbarImage { get; set; }
@@ -83,7 +84,6 @@ namespace MonoMobile.MVVM
 
 		private Func<IRoot, UIViewController> _ViewControllerFactory;
 
-		public List<Group> Groups { get; set; }
 		public bool UnevenRows { get; set; }
 
 		[Preserve]
@@ -99,8 +99,9 @@ namespace MonoMobile.MVVM
 		/// </param>
 		public RootElement(string caption) : base(caption)
 		{
+			Index = -1;
+			IsSearchbarHidden = true;
 			Sections = new List<ISection>();
-			Groups = new List<Group>();
 		}
 
 		/// <summary>
@@ -117,29 +118,10 @@ namespace MonoMobile.MVVM
 			//Sections = new List<ISection>();
 		}
 
-		/// <summary>
-		/// Initializes a RootElement that renders the summary based on the radio settings of the contained elements. 
-		/// </summary>
-		/// <param name="caption">
-		/// The caption to ender
-		/// </param>
-		/// <param name="group">
-		/// The group that contains the checkbox or radio information.  This is used to display
-		/// the summary information when a RootElement is rendered inside a section.
-		/// </param>
-		public RootElement(string caption, Group group) : this(caption)
-		{
-			Groups.Add(group);
-		}
-
 		public List<ISection> Sections { get; set; }
 
 		public NSIndexPath PathForRadio()
-		{
-			RadioGroup radio = Groups[0] as RadioGroup;
-			if (radio == null)
-				return null;
-			
+		{			
 			uint current = 0, section = 0;
 			foreach (ISection s in Sections)
 			{
@@ -150,7 +132,7 @@ namespace MonoMobile.MVVM
 					if (!(e is RadioElement))
 						continue;
 					
-					if (current == ItemIndex)
+					if (current == Index)
 					{
 						return NSIndexPath.Create(section, row);
 					}
@@ -378,35 +360,6 @@ namespace MonoMobile.MVVM
 				yield return s;
 		}
 
-		/// <summary>
-		/// The currently selected Radio item in the whole Root.
-		/// </summary>
-		public int ItemIndex
-		{
-			get {
-				var radio = Groups.FirstOrDefault() as RadioGroup;
-				if (radio != null)
-					return radio.Selected;
-				return -1;
-			}
-			set {
-				var radio = Groups[0] as RadioGroup;
-				if (radio != null)
-				{
-					radio.Selected = value;
-				}
-			}
-		}
-
-		public override UITableViewElementCell NewCell()
-		{
-			var style = Theme.CellStyle;
-			
-			var cell = new UITableViewElementCell(style, Id, this);
-
-			return cell;
-		}
-
 		public override void InitializeCell(UITableView tableView)
 		{
 			DetailTextAlignment = UITextAlignment.Right;
@@ -444,9 +397,13 @@ namespace MonoMobile.MVVM
 			var root = BindingContext.CreateRootedView(this);
 			
 			if (root != null)
+			{
 				((RootElement)root).ActivateController(dvc, tableView, path);
-			else	
+			}
+			else
+			{
 				ActivateController(dvc, tableView, path);
+			}
 		}
 
 		public void ActivateController(DialogViewController dvc, UITableView tableView, NSIndexPath path)
@@ -494,9 +451,9 @@ namespace MonoMobile.MVVM
 			TableView.ReloadRows(new NSIndexPath[] { path }, animation);
 		}
 
-		protected override void OnValueChanged()
+		protected override void OnDataContextChanged()
 		{
-			base.OnValueChanged();
+			base.OnDataContextChanged();
 			
 			if (ContentView is IView && ContentView != null)
 			{
@@ -506,27 +463,11 @@ namespace MonoMobile.MVVM
 					Sections = binding.Root.Sections;
 				}
 			}
-			if (Sections != null)
-			{
-				var radio = Groups.FirstOrDefault() as RadioGroup;
-				var section = Sections.FirstOrDefault();
-				if (radio != null && section != null && !section.IsMultiselect) 
-				{
-					var selected = EnumExtensions.GetValueFromString(radio.EnumType, (string)Value);
-					radio.Selected = selected;
-					foreach (RadioElement element in section)
-					{
-						element.UpdateSelected(element, false);
-					}
 
-					((RadioElement)section[selected]).Value = true;
-				}
-			}
-
-			if (Groups != null && DetailTextLabel != null)
-			{
-				DetailTextLabel.Text = ToString();
-			}
+//			if (DetailTextLabel != null && Value != null)
+//			{
+//				DetailTextLabel.Text = Value.ToString();
+//			}
 		}
 
 		public override string ToString()
@@ -536,9 +477,9 @@ namespace MonoMobile.MVVM
 				return ContentView.ToString();
 			}
 
-			if (Value != null)
+			if (DataContext != null)
 			{
-				return Value.ToString();
+				return DataContext.ToString();
 			}
 
 			return string.Empty;
@@ -546,8 +487,8 @@ namespace MonoMobile.MVVM
 
 		protected int FromString(string value)
 		{
-			var element = Sections[0].Elements.SingleOrDefault((e)=>e.ToString() == value);
-			return Sections[0].Elements.IndexOf(element);
+			var element = Sections.FirstOrDefault().Elements.SingleOrDefault((e)=>e.ToString() == value);
+			return Sections.FirstOrDefault().Elements.IndexOf(element);
 		}
 	}
 }

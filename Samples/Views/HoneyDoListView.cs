@@ -14,7 +14,8 @@ namespace Samples
 	{
 		[Bind("Caption", "Caption")]
 		[Root(ViewType = typeof(StandardListView))]
-		public MultiselectCollection<string> Items { get; private set; }
+		[MultiSelection]
+		public List<string> Items { get; private set; }
 
 		
 		public HoneyDoListView()

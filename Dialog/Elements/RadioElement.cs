@@ -56,40 +56,52 @@ namespace MonoMobile.MVVM
 		{
 			if (Parent != null)
 			{
-				var root = (IRoot)Parent.Parent;
-				if (root != null)
+				if (Root != null)
 				{
-					var radioGroup = root.Groups.FirstOrDefault() as RadioGroup;
-
-					var section = root.Sections[indexPath.Section];
+					var section = Root.Sections[indexPath.Section];
+					var selectedIndex = -1;
 					var index = 0;
-					foreach (var e in section.Elements)
+					
+					if (Container != null)
 					{
-						var radioView = e as RadioElement;
-						UpdateSelected(radioView, this == radioView);
+						Container.SelectedItems.Clear();
 
-						if (this == radioView && radioGroup != null)
+						foreach (var e in section.Elements)
 						{
-							radioGroup.Selected = index;
+							var radioView = e as RadioElement;
+							UpdateSelected(radioView, this == radioView);
+							
+							if (this == radioView)
+							{
+								selectedIndex = index;
+
+								Container.SelectedItem = Item;
+								Container.SelectedItems.Add(Item);
+							}
+							index++;
 						}
-
-						index++;
 					}
+							
+					Root.Index = selectedIndex;					
 					
-					root.Value = this.Caption;
+					var property = BindableProperty.GetBindableProperty(Container, "SelectedItemProperty");
+					if (property != null)
+						property.Update();
+					
+					property = BindableProperty.GetBindableProperty(Container, "SelectedItemsProperty");
+					if (property != null)
+						property.Update();
 
-					var property = BindableProperty.GetBindableProperty(root, "ValueProperty");
+					property = BindableProperty.GetBindableProperty(Container, "IndexProperty");
 					property.Update();
 
-					property = BindableProperty.GetBindableProperty(root, "ItemIndexProperty");
-					property.Update();
-					
-					if (radioGroup != null)
-						root.ItemIndex = radioGroup.Selected;
+					property = BindableProperty.GetBindableProperty(Root, "DataContextProperty");
+					if (property != null)
+						property.Update(Caption);
 				}
 			}
 			
-			Value = true;
+			DataContext = true;
 			UpdateSelected();
 			
 			if (PopOnSelect)
@@ -100,7 +112,7 @@ namespace MonoMobile.MVVM
 		{
 			if (element != null)
 			{
-				element.Value = selected;
+				element.DataContext = selected;
 				element.UpdateSelected();
 			}
 		}

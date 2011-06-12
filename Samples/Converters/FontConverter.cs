@@ -6,7 +6,7 @@ namespace Samples
 	using MonoTouch.Foundation;
 	using MonoTouch.UIKit;	
 	
-	[Preserve(AllMembers=true)]
+	[Preserve(AllMembers = true)]
 	public class FontConverter : IValueConverter
 	{
 		public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
@@ -21,7 +21,8 @@ namespace Samples
 
 		public object ConvertBack(object value, Type targteType, object parameter, CultureInfo culture)
 		{
-			throw new NotSupportedException();
+			return value;
+		//	throw new NotSupportedException();
 		}
 	}
 }

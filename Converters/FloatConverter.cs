@@ -41,17 +41,23 @@ namespace MonoMobile.MVVM
 			if (value == null)
 				return string.Empty;
 			
+			if (parameter is FloatElement)
+				return value;
+
 			return value.ToString();
 		}
 
 		public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
 		{
-			if (value.GetType() == typeof(string))
+			if (value != null)
 			{
-				return (float)System.Convert.ToDouble(value);
+				if (value.GetType() == typeof(string))
+				{
+					return (float)System.Convert.ToDouble(value);
+				}
 			}
-			
-			return 0f;
+
+			return value;
 		}
 	}
 }

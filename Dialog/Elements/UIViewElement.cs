@@ -67,9 +67,10 @@ namespace MonoMobile.MVVM
 		/// </param>
 		public UIViewElement(string caption, UIView view, bool transparent) : base(caption)
 		{
-			Value = view.ToString();
+			//Value = view.ToString();
 			ContentView = view;
 			Flags = transparent ? CellFlags.Transparent : 0;
+			DataContext = null;
 		}
 
 		public override void InitializeCell(UITableView tableView)
@@ -78,13 +79,8 @@ namespace MonoMobile.MVVM
 			{
 				Cell.BackgroundColor = UIColor.Clear;
 				Cell.Opaque = false;
-
-				//
-				// This trick is necessary to keep the background clear, otherwise
-				// it gets painted as black
-				//
-				//Cell.BackgroundView = new UIView(RectangleF.Empty) { BackgroundColor = UIColor.Clear };
 			}
+
 			if ((Flags & CellFlags.DisableSelection) != 0)
 				Cell.SelectionStyle = UITableViewCellSelectionStyle.None;
 

@@ -31,10 +31,9 @@ namespace MonoMobile.MVVM
 {
 	using System;
 	using System.Drawing;
-	using System.Reflection;
+	using MonoMobile.MVVM;
 	using MonoTouch.CoreGraphics;
 	using MonoTouch.Foundation;
-	using MonoMobile.MVVM;
 	using MonoTouch.UIKit;
 
 	public enum CellPosition
@@ -110,24 +109,29 @@ namespace MonoMobile.MVVM
 
 		public RectangleF RecalculateContentFrame(RectangleF frame, bool showCaption)
 		{
+			var screenWidth = UIDevice.CurrentDevice.GetActualWidth();
+			var indentation = UIDevice.CurrentDevice.GetIndentation();
+			var margin = UIDevice.CurrentDevice.GetDeviceMargin();
+			var fixedGap = UIDevice.CurrentDevice.GetFixedGap();
+ 
 			var indentedSides = 1;
 			if (Element.TableView.Style == UITableViewStyle.Grouped)
 			{
 				indentedSides = 2;
 			}
 			
-			SizeF captionSize = new SizeF((IndentationWidth + (IndentationWidth / 2)), Bounds.Height);
+			SizeF captionSize = new SizeF(indentation, Bounds.Height);
 			var caption = TextLabel.Text;
 			if (!string.IsNullOrEmpty(caption) && showCaption)
 			{
 				captionSize = TextLabel.StringSize(caption, UIFont.FromName(TextLabel.Font.Name, UIFont.LabelFontSize));
-				captionSize.Width += (IndentationWidth * indentedSides);
+				captionSize.Width += ((margin * 2) * indentedSides);
 			}
 			
-			float x = captionSize.Width - (IndentationWidth / 2);
-			float y = (float)Math.Round((double)Bounds.Height - (double)captionSize.Height) / 2;
-			float width = Bounds.Width - captionSize.Width - (IndentationWidth * ((indentedSides * 2) - 1)) + (IndentationWidth / 2);
-			
+			float x = captionSize.Width + fixedGap;
+			float y = ((float)Math.Round((double)Bounds.Height - (double)captionSize.Height) / 2) - 1;
+			float width = screenWidth - captionSize.Width - (indentation * 2f) - (margin * 3) - fixedGap;
+
 			RectangleF actualFrame;
 			
 			if (frame == RectangleF.Empty)
@@ -170,8 +174,9 @@ namespace MonoMobile.MVVM
 
 		public void DrawContentView()
 		{
-			if (!Highlighted || Element.Theme.DrawWhenHighlighted)
+			if (!Highlighted)
 			{
+
 				var borderRect = Bounds;
 
 				var innerRect = CalculateInnerRect(); 
@@ -183,6 +188,7 @@ namespace MonoMobile.MVVM
 				CGContext context = UIGraphics.GetCurrentContext();
 				context.SaveState();
 				
+
 				context.SetFillColorWithColor(backgroundColor.CGColor);
 	
 				if (TableView.Style == UITableViewStyle.Grouped)
@@ -200,12 +206,12 @@ namespace MonoMobile.MVVM
 				context.Clip();
 	
 				ShouldDrawBorder = false;
-
+				
 				if (Element.Theme.DrawContentViewAction != null)
 					Element.Theme.DrawContentViewAction(innerRect, context, this);
-	
+
 				context.RestoreState();
-	
+		
 				if (ShouldDrawBorder)
 				{
 					DrawBorder(context, path);
@@ -231,9 +237,13 @@ namespace MonoMobile.MVVM
 		{
 			var indentationOffset = 0f;
 			var borderOffset = 1;
+			var indentation = UIDevice.CurrentDevice.GetIndentation();
+			var gap = UIDevice.CurrentDevice.GetFixedGap();
+			if (UIDevice.CurrentDevice.UserInterfaceIdiom == UIUserInterfaceIdiom.Phone)
+				gap = 0;
 
 			if (TableView.Style == UITableViewStyle.Grouped)
-				indentationOffset = IndentationWidth;
+				indentationOffset = indentation + gap;
 			
 //			if (TableView.SeparatorStyle == UITableViewCellSeparatorStyle.DoubleLineEtched)
 //				borderOffset = 2;
@@ -333,11 +343,12 @@ namespace MonoMobile.MVVM
 		public UITableViewCellContentView(UITableViewElementCell cell) : base(cell.Bounds)
 		{
 			Cell = cell;
+
 			Opaque = false;
 		}
 
 		public override void Draw(RectangleF rect)
-		{
+		{	
 			if (Cell != null)
 			{
 				Cell.DrawContentView();

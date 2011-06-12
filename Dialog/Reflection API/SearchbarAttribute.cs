@@ -1,10 +1,10 @@
 //
-// CheckboxAttribute.cs
+// SearchbarAttribute.cs
 //
 // Author:
-//   Miguel de Icaza (miguel@gnome.org)
+//   Robert Kozak (rkozak@nowcom.com)
 //
-// Copyright 2010, Novell, Inc.
+// Copyright 2011, Nowcom Corporation
 //
 // Code licensed under the MIT X11 license
 //
@@ -31,8 +31,14 @@ namespace MonoMobile.MVVM
 {
 	using System;
 
-	[AttributeUsage(AttributeTargets.Property | AttributeTargets.Field, Inherited = false)]
-	public class CheckboxAttribute : Attribute
+	[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, Inherited = false)]
+	public class SearchbarAttribute : Attribute
 	{
+		public SearchbarAttribute()
+		{
+		}
+
+		public string Placeholder { get; set; }
+		public bool IncrementalSearch { get; set; }
 	}
 }

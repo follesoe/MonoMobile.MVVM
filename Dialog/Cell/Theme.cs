@@ -54,7 +54,6 @@ namespace MonoMobile.MVVM
 		private UIColor _BackgroundColor;
 
 		public string Name { get; set; }
-		public bool DrawWhenHighlighted { get; set; }
 
 		public UIColor PlaceholderColor { get; set; }
 		public UITextAlignment PlaceholderAlignment { get; set; }
@@ -67,7 +66,7 @@ namespace MonoMobile.MVVM
 		public UIColor BarTintColor { get; set; }
 		public string BarImage { get; set; }
 		public bool BarTranslucent { get; set; }
-		
+
 		public UITableViewElementCell Cell 
 		{ 
 			get {return _Cell; }
@@ -148,12 +147,14 @@ namespace MonoMobile.MVVM
 		public UITextAlignment TextAlignment { get; set; }
 		public SizeF TextShadowOffset { get; set; }
 		public UIColor TextShadowColor { get; set; }
+		public UIColor TextHighlightColor { get; set; }
 
 		public UILabel DetailTextLabel { get; set; }
 		public UIFont DetailTextFont { get; set; }
 		public UITextAlignment DetailTextAlignment { get; set; }
 		public SizeF DetailTextShadowOffset { get; set; }
 		public UIColor DetailTextShadowColor { get; set; }
+		public UIColor DetailTextHighlightColor { get; set; }
 
 		public UIColor TextColor
 		{
@@ -272,11 +273,11 @@ namespace MonoMobile.MVVM
 				if (theme.Accessory != Accessory)
 					Accessory = theme.Accessory;
 				
-				if (theme.CellImageIcon != null)
-					CellImageIcon = theme.CellImageIcon;
-				
-				if (theme.CellImageIconUri != null)
-					CellImageIconUri = theme.CellImageIconUri;
+//				if (theme.CellImageIcon != null)
+//					CellImageIcon = theme.CellImageIcon;
+//				
+//				if (theme.CellImageIconUri != null)
+//					CellImageIconUri = theme.CellImageIconUri;
 				
 				if (theme.CellBackgroundColor != null)
 					CellBackgroundColor = theme.CellBackgroundColor;
@@ -301,9 +302,13 @@ namespace MonoMobile.MVVM
 				
 				if (theme.TextShadowColor != null)
 					TextShadowColor = theme.TextShadowColor;
+			
+				if (theme.TextHighlightColor != null)
+					TextHighlightColor = theme.TextHighlightColor;
 
 				TextAlignment = theme.TextAlignment;
 		
+
 				if (theme.DetailTextLabel != null)
 					DetailTextLabel = theme.DetailTextLabel;
 
@@ -319,8 +324,12 @@ namespace MonoMobile.MVVM
 				if (theme.DetailTextShadowColor != null)
 					TextShadowColor = theme.DetailTextShadowColor;
 
+				if (theme.DetailTextHighlightColor != null)
+					DetailTextHighlightColor = theme.DetailTextHighlightColor;
+
 				DetailTextAlignment = theme.DetailTextAlignment;
 	
+		
 				if (theme.PlaceholderColor != null)
 					PlaceholderColor = theme.PlaceholderColor;
 				
@@ -384,7 +393,6 @@ namespace MonoMobile.MVVM
 					DrawContentViewAction = theme.DrawContentViewAction;
 				}
 
-			
 				if (theme.BackgroundColor != null)
 					BackgroundColor = theme.BackgroundColor;
 				
@@ -410,8 +418,8 @@ namespace MonoMobile.MVVM
 				
 				if (TextLabel != null)
 				{
-					if (TextFont == null)
-						TextFont = cell.TextLabel.Font;
+//					if (TextFont == null)
+//						TextFont = cell.TextLabel.Font;
 	
 					if (TextColor == null)
 						TextColor = cell.TextLabel.TextColor;
@@ -427,8 +435,8 @@ namespace MonoMobile.MVVM
 
 				if (DetailTextLabel != null)
 				{
-					if (DetailTextFont == null)
-						DetailTextFont = cell.DetailTextLabel.Font;
+//					if (DetailTextFont == null)
+//						DetailTextFont = cell.DetailTextLabel.Font;
 					
 					if (DetailTextColor == null)
 						DetailTextColor = cell.DetailTextLabel.TextColor;
